@@ -21,7 +21,7 @@ pub fn RangeContext(comptime T: type) type {
         step: T,
 
         /// Look at the nth item without advancing
-        pub fn peekAheadFn(self: *Self, n: usize) ?T {
+        pub fn peekAheadFn(self: *Self, comptime n: usize) ?T {
             var current = self.current;
             var i: usize = 0;
             while (i < n) {
@@ -39,15 +39,17 @@ pub fn RangeContext(comptime T: type) type {
 
         /// Advances the iterator by step and return the item
         pub fn nextFn(self: *Self) ?T {
-            if (self.current == self.end) return null;
-            const current = self.current;
-            if (self.step < 0 and current < self.end) {
-                return null;
-            } else if (self.step > 0 and current > self.end) {
-                return null;
+            if (self.step < 0) {
+                if (self.current <= self.end) {
+                    return null;
+                }
+            } else {
+                if (self.current >= self.end) {
+                    return null;
+                }
             }
-            self.current += self.step;
-            return current;
+            defer self.current += self.step;
+            return self.current;
         }
 
         /// Advances the iterator by step and return whether it
