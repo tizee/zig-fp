@@ -7,7 +7,7 @@ zig version
 0.10.0-dev.3340+c6f5832bb
 ```
 
-Currently Zig does not support closure but we can achieve similar functionality with `comptime` and `type` to build the context for resuing the same iterator interface.
+Currently Zig does not support closure but we can achieve similar functionality with `comptime` and `type` to build the context for reusing the same iterator interface.
 
 ## TODO
 
