@@ -59,6 +59,7 @@ pub fn RangeContext(comptime T: type) type {
 
         /// Advances the iterator by step and return the item
         pub fn nextFn(self: *Self) ?ItemType {
+            var current = self.current;
             if (self.step < 0) {
                 if (self.current <= self.end) {
                     return null;
@@ -68,11 +69,12 @@ pub fn RangeContext(comptime T: type) type {
                     return null;
                 }
             }
-            defer self.current += self.step;
-            return self.current;
+            self.current += self.step;
+            return current;
         }
 
         pub fn nextBackFn(self: *Self) ?ItemType {
+            var current = self.current;
             if (self.step < 0) {
                 if (self.current >= self.start) {
                     return null;
@@ -82,8 +84,8 @@ pub fn RangeContext(comptime T: type) type {
                     return null;
                 }
             }
-            defer self.current += self.step;
-            return self.current;
+            self.current -= self.step;
+            return current;
         }
 
         /// Advances the iterator by step and return the
@@ -124,7 +126,7 @@ pub fn RangeContext(comptime T: type) type {
             }
         }
 
-        pub fn init(start: T, end: T, comptime step: T) Self {
+        pub fn init(start: ItemType, end: ItemType, comptime step: ItemType) Self {
             comptime {
                 if (step == 0) {
                     @compileError("Range step cannot be zero");

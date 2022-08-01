@@ -2,23 +2,14 @@ const IIterator = @import("iterator/iterator.zig").IIterator;
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 const debug = @import("std").debug;
 
+const IterAssert = @import("utils.zig");
+
 /// The filter iterator is designed to be lazily evaluated
 /// as the the map iterator
 /// It's just a wrapper over underlying iterator
 pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (?Context.ItemType) bool) type {
     comptime {
-        const has_nextFn = @hasDecl(Context, "nextFn");
-        const has_peekAheadFn = @hasDecl(Context, "peekAheadFn");
-        const has_skipFn = @hasDecl(Context, "skipFn");
-        if (!has_nextFn or !has_peekAheadFn or !has_skipFn) {
-            @compileError("Iterator requires a valid context");
-        }
-        const has_nextBackwardFn = @hasDecl(Context, "nextBackFn");
-        const has_skipBackFn = @hasDecl(Context, "skipBackFn");
-        const has_peekBackwardFn = @hasDecl(Context, "peekBackwardFn");
-        if (!has_peekBackwardFn or !has_skipBackFn or !has_nextBackwardFn) {
-            @compileError("Context is invalid for a double-ended iterator");
-        }
+        IterAssert.assertDoubleEndedIteratorContext(Context);
     }
     return struct {
         const Self = @This();
@@ -124,12 +115,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (?
 
 pub fn FilterContext(comptime Context: type, comptime filterFn: fn (?Context.ItemType) bool) type {
     comptime {
-        const has_nextFn = @hasDecl(Context, "nextFn");
-        const has_peekAheadFn = @hasDecl(Context, "peekAheadFn");
-        const has_skipFn = @hasDecl(Context, "skipFn");
-        if (!has_nextFn or !has_peekAheadFn or !has_skipFn) {
-            @compileError("FilterContext requires a valid inner context type");
-        }
+        IterAssert.assertIteratorContext(Context);
     }
     return struct {
         const Self = @This();
@@ -186,10 +172,7 @@ pub fn FilterContext(comptime Context: type, comptime filterFn: fn (?Context.Ite
 /// A Filter Iterator constructor
 /// It's actually a wrapper over an iterator
 pub fn FilterIterator(comptime Context: type, comptime filterFn: fn (?Context.ItemType) bool) type {
-    const has_nextBackwardFn = @hasDecl(Context, "nextBackFn");
-    const has_skipBackFn = @hasDecl(Context, "skipBackFn");
-    const has_peekBackwardFn = @hasDecl(Context, "peekBackwardFn");
-    if (has_peekBackwardFn and has_skipBackFn and has_nextBackwardFn) {
+    if (IterAssert.isDoubleEndedIteratorContext(Context)) {
         const FilterContextType = DoubleEndedFilterContext(Context, filterFn);
         return IDoubleEndedIterator(FilterContextType);
     } else {

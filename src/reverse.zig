@@ -1,16 +1,13 @@
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 
+const IterAssert = @import("utils.zig");
+
 const debug = @import("std").debug;
 
 // ReverseIterator's context should be a wrapper over its inner context
 pub fn ReverseContext(comptime Context: type) type {
     comptime {
-        const has_nextBackwardFn = @hasDecl(Context, "nextBackFn");
-        const has_skipBackFn = @hasDecl(Context, "skipBackFn");
-        const has_peekBackwardFn = @hasDecl(Context, "peekBackwardFn");
-        if (!has_peekBackwardFn or !has_skipBackFn or !has_nextBackwardFn) {
-            @compileError("Context is invalid for ReverseIterator");
-        }
+        IterAssert.assertDoubleEndedIteratorContext(Context);
     }
 
     return struct {
