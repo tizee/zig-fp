@@ -1,7 +1,7 @@
 pub const MapIterator = @import("../map.zig").MapIterator;
 pub const RangeIterator = @import("../range.zig").RangeIterator;
 pub const ReverseIterator = @import("../reverse.zig").ReverseIterator;
-pub const SliceIterator = @import("../slice.zig").SliceIterator;
+pub const slice = @import("../slice.zig").slice;
 pub const FilterIterator = @import("../filter.zig").FilterIterator;
 pub const EnumerateIterator = @import("../enumerate.zig").EnumerateIterator;
 
@@ -141,11 +141,8 @@ pub fn IDoubleEndedIterator(
 }
 
 test "test filter" {
-    const SliceInt = SliceIterator(u32);
-
-    const slice = [_]u32{ 1, 2, 3, 4 };
-    var context = SliceInt.IterContext.init(&slice);
-    var iter = SliceInt.initWithContext(context);
+    const ints = &[_]u32{ 1, 2, 3, 4 };
+    var iter = slice(u32, ints);
 
     const S = struct {
         pub fn large(cur: ?u32) bool {
@@ -169,9 +166,7 @@ test "test filter" {
 }
 
 test "test enumerate" {
-    const SliceStr = SliceIterator(u8);
-    var context = SliceStr.IterContext.init("abcd");
-    var iter = SliceStr.initWithContext(context);
+    var iter = slice(u8, "abcd");
     var enum_iter = iter.enumerate();
 
     var i: usize = 0;
@@ -183,9 +178,7 @@ test "test enumerate" {
 }
 
 test "test reverse" {
-    const SliceStr = SliceIterator(u8);
-    var context = SliceStr.IterContext.init("abcd");
-    var iter = SliceStr.initWithContext(context);
+    var iter = slice(u8, "abcd");
     var reversed_iter = iter.reverse();
 
     const truth = "dcba";
@@ -197,9 +190,7 @@ test "test reverse" {
 }
 
 test "test reduce" {
-    const SliceInt = SliceIterator(u32);
-    var context = SliceInt.IterContext.init(&[_]u32{ 1, 2, 3, 4 });
-    var iter = SliceInt.initWithContext(context);
+    var iter = slice(u32, &[_]u32{ 1, 2, 3, 4 });
 
     const Fn = struct {
         pub fn sum(accum: u32, cur: u32) u32 {
@@ -213,9 +204,7 @@ test "test reduce" {
 }
 
 test "test for each" {
-    const SliceStr = SliceIterator(u8);
-    var context = SliceStr.IterContext.init("abcd");
-    var iter = SliceStr.initWithContext(context);
+    var iter = slice(u8, "abcd");
 
     const Fn = struct {
         pub fn print(cur: u8) void {
@@ -227,9 +216,7 @@ test "test for each" {
 }
 
 test "test fold" {
-    const SliceStr = SliceIterator(u8);
-    var context = SliceStr.IterContext.init("abcd");
-    var iter = SliceStr.initWithContext(context);
+    var iter = slice(u8, "abcd");
 
     const Fn = struct {
         pub fn sum(accum: u32, cur: u8) u32 {

@@ -1,6 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const SliceIterator = @import("slice.zig").SliceIterator;
+const slice = @import("slice.zig").slice;
 const debug = std.debug;
 
 test "test SliceIterator" {
@@ -22,4 +23,16 @@ test "test SliceIterator" {
     _ = iter.next();
     _ = iter.next();
     try testing.expectEqual(@as(?u8, str[2]), iter.peek());
+}
+
+test "test slice" {
+    const str = "abcd";
+    var iter = slice(u8, str);
+
+    var i: usize = 0;
+    while (iter.next()) |value| {
+        try testing.expectEqual(str[i], value);
+        i += 1;
+        debug.print("{}\n", .{value});
+    }
 }

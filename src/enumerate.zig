@@ -1,6 +1,7 @@
 const IIterator = @import("iterator/iterator.zig").IIterator;
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 
+const SliceIter = @import("slice.zig");
 const IterAssert = @import("utils.zig");
 
 pub fn DoubleEndedEnumerateContext(comptime Context: type) type {
@@ -12,19 +13,18 @@ pub fn DoubleEndedEnumerateContext(comptime Context: type) type {
         pub const InnerContextType = Context;
         pub const ItemType = struct { index: usize, value: Context.ItemType };
 
+        index: usize = 0,
         context: Context,
 
         pub fn init(context: InnerContextType) Self {
-            return Self{
-                .context = context,
-            };
+            return Self{ .context = context, .index = @as(usize, 0) };
         }
 
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
                 return ItemType{
-                    .index = self.context.current + n,
+                    .index = self.index + n,
                     .value = value,
                 };
             }
@@ -34,7 +34,7 @@ pub fn DoubleEndedEnumerateContext(comptime Context: type) type {
         pub fn peekBackwardFn(self: *Self, n: usize) bool {
             if (self.context.peekBackwardFn(n)) |value| {
                 return ItemType{
-                    .index = self.context.current - n,
+                    .index = self.index - n,
                     .value = value,
                 };
             }
@@ -43,8 +43,9 @@ pub fn DoubleEndedEnumerateContext(comptime Context: type) type {
 
         pub fn nextFn(self: *Self) ?ItemType {
             if (self.context.nextFn()) |value| {
+                defer self.index += 1;
                 return ItemType{
-                    .index = self.context.current - 1,
+                    .index = self.index,
                     .value = value,
                 };
             }
@@ -53,8 +54,9 @@ pub fn DoubleEndedEnumerateContext(comptime Context: type) type {
 
         pub fn nextBackFn(self: *Self) ?ItemType {
             if (self.context.nextBackFn()) |value| {
+                defer self.index += 1;
                 return ItemType{
-                    .index = self.context.current + 1,
+                    .index = self.index,
                     .value = value,
                 };
             }
@@ -80,19 +82,18 @@ pub fn EnumerateContext(comptime Context: type) type {
         pub const InnerContextType = Context;
         pub const ItemType = struct { index: usize, value: Context.ItemType };
 
+        index: usize,
         context: Context,
 
         pub fn init(context: InnerContextType) Self {
-            return Self{
-                .context = context,
-            };
+            return Self{ .context = context, .index = @as(usize, 0) };
         }
 
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
                 return ItemType{
-                    .index = self.context.current + n,
+                    .index = self.index + n,
                     .value = value,
                 };
             }
@@ -101,8 +102,9 @@ pub fn EnumerateContext(comptime Context: type) type {
 
         pub fn nextFn(self: *Self) ?ItemType {
             if (self.context.nextFn()) |value| {
+                defer self.index += 1;
                 return ItemType{
-                    .index = self.context.current - 1,
+                    .index = self.index,
                     .value = value,
                 };
             }
@@ -125,4 +127,8 @@ pub fn EnumerateIterator(comptime Context: type) type {
         const EnumerateContextType = EnumerateContext(Context);
         return IIterator(EnumerateContextType);
     }
+}
+
+pub fn enumerate(comptime T: type, s: []const T) EnumerateIterator(SliceIter.SliceContext(T)) {
+    return SliceIter.slice(T, s).enumerate();
 }

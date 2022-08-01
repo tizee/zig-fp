@@ -2,7 +2,10 @@ const std = @import("std");
 const debug = std.debug;
 const testing = std.testing;
 const MapIterator = @import("map.zig").MapIterator;
+const map = @import("map.zig").map;
+
 const SliceIterator = @import("slice.zig").SliceIterator;
+const slice = @import("slice.zig").slice;
 
 fn transform(value: u8) bool {
     if (value == '1') return true;
@@ -32,19 +35,32 @@ test "test MapIterator" {
     }
 }
 
-test "test map" {
-    const StrIter = SliceIterator(u8);
+test "test slice map" {
     const str = "0011";
-    var context = StrIter.IterContext.init(str);
-    var slice_iter = StrIter.initWithContext(context);
+    var slice_iter = slice(u8, str);
 
-    var map_iter = slice_iter.map(bool, transform).map(u8, transform2);
+    var map_iter = slice_iter
+        .map(bool, transform)
+        .map(u8, transform2);
 
-    const truth = "0011";
     var i: usize = 0;
     while (map_iter.next()) |value| {
         debug.print("{}\n", .{value});
-        try testing.expectEqual(truth[i], value);
+        try testing.expectEqual(str[i], value);
+        i += 1;
+    }
+}
+
+test "test map method" {
+    const str = "0011";
+
+    var map_iter = map(u8, bool, str, transform)
+        .map(u8, transform2);
+
+    var i: usize = 0;
+    while (map_iter.next()) |value| {
+        debug.print("{}\n", .{value});
+        try testing.expectEqual(str[i], value);
         i += 1;
     }
 }

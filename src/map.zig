@@ -1,5 +1,6 @@
 const IIterator = @import("iterator/iterator.zig").IIterator;
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const SliceIter = @import("slice.zig");
 const IterAssert = @import("utils.zig");
 
 pub fn DoubleEndedMapContext(comptime Context: type, comptime Out: type, comptime transformFn: fn (Context.ItemType) Out) type {
@@ -106,4 +107,8 @@ pub fn MapIterator(comptime Context: type, comptime Out: type, comptime transfor
         const MapContextType = MapContext(Context, Out, transformFn);
         return IIterator(MapContextType);
     }
+}
+
+pub fn map(comptime T: type, comptime Out: type, s: []const T, comptime transformFn: fn (T) Out) MapIterator(SliceIter.SliceContext(T), Out, transformFn) {
+    return SliceIter.slice(T, s).map(Out, transformFn);
 }

@@ -59,18 +59,14 @@ pub fn RangeContext(comptime T: type) type {
 
         /// Advances the iterator by step and return the item
         pub fn nextFn(self: *Self) ?ItemType {
-            var current = self.current;
-            if (self.step < 0) {
-                if (self.current <= self.end) {
-                    return null;
-                }
-            } else {
-                if (self.current >= self.end) {
-                    return null;
-                }
+            if (self.step < 0 and self.current <= self.end) {
+                return null;
             }
-            self.current += self.step;
-            return current;
+            if (self.step > 0 and self.current >= self.end) {
+                return null;
+            }
+            defer self.current += self.step;
+            return self.current;
         }
 
         pub fn nextBackFn(self: *Self) ?ItemType {
@@ -84,7 +80,7 @@ pub fn RangeContext(comptime T: type) type {
                     return null;
                 }
             }
-            self.current -= self.step;
+            defer self.current -= self.step;
             return current;
         }
 
@@ -126,13 +122,7 @@ pub fn RangeContext(comptime T: type) type {
             }
         }
 
-        pub fn init(start: ItemType, end: ItemType, comptime step: ItemType) Self {
-            comptime {
-                if (step == 0) {
-                    @compileError("Range step cannot be zero");
-                }
-            }
-
+        pub fn init(start: ItemType, end: ItemType, step: ItemType) Self {
             return Self{ .direction = true, .start = start, .current = start, .end = end, .step = step };
         }
     };
@@ -141,4 +131,11 @@ pub fn RangeContext(comptime T: type) type {
 pub fn RangeIterator(comptime T: type) type {
     const RangeContextType = RangeContext(T);
     return IDoubleEndedIterator(RangeContextType);
+}
+
+/// An easy-to-use API
+pub fn range(comptime T: type, start: T, end: T, step: T) RangeIterator(T) {
+    const RangeType = RangeIterator(T);
+    var context = RangeType.IterContext.init(start, end, step);
+    return RangeType.initWithContext(context);
 }

@@ -1,24 +1,23 @@
 const std = @import("std");
 const testing = std.testing;
 const SliceIterator = @import("slice.zig").SliceIterator;
+const slice = @import("slice.zig").slice;
+const reverse = @import("reverse.zig").reverse;
 const ReverseIterator = @import("reverse.zig").ReverseIterator;
 const debug = std.debug;
 
 test "Test Reversed for Int" {
-    const SliceInt = SliceIterator(u32);
-    const str = &[_]u32{ 1, 2, 3, 4 };
+    const ints = &[_]u32{ 1, 2, 3, 4 };
 
-    var context = SliceInt.IterContext.init(str);
-    var iter = SliceInt.initWithContext(context);
+    var iter = slice(u32, ints);
+
     var reversed_iter = iter.reverse();
-    debug.print("{} {}\n", .{ context.len, context.current });
 
-    var i: usize = str.len;
+    var i: usize = ints.len;
     while (reversed_iter.next()) |value| {
-        debug.print("context {} {}\n", .{ context.len, context.current });
         i -= 1;
-        debug.print("{} {}\n", .{ str[i], value });
-        try testing.expectEqual(str[i], value);
+        debug.print("{} {}\n", .{ ints[i], value });
+        try testing.expectEqual(ints[i], value);
     }
 }
 
@@ -27,9 +26,8 @@ test "Test Reversed for string" {
         x: i32,
         y: i32,
     };
-    const SlicePoint = SliceIterator(Point);
 
-    const slice = &[_]Point{
+    const points = &[_]Point{
         .{
             .x = 1,
             .y = 1,
@@ -47,15 +45,46 @@ test "Test Reversed for string" {
             .y = 4,
         },
     };
-    var context = SlicePoint.IterContext.init(slice);
-    var iter = SlicePoint.initWithContext(context);
+    var iter = slice(Point, points);
 
     var reversed_iter = iter.reverse();
 
-    var i: usize = slice.len;
+    var i: usize = points.len;
     while (reversed_iter.next()) |value| {
         i -= 1;
         debug.print("{}\n", .{value});
-        try testing.expectEqual(slice[i], value);
+        try testing.expectEqual(points[i], value);
     }
+}
+
+test "test reverse" {
+    const ints = &[_]u32{ 1, 2, 3, 4 };
+
+    var reversed_iter = reverse(u32, ints);
+
+    var i: usize = ints.len;
+    while (reversed_iter.next()) |value| {
+        i -= 1;
+        debug.print("{} {}\n", .{ ints[i], value });
+        try testing.expectEqual(ints[i], value);
+    }
+    try testing.expectEqual(@as(usize, 0), i);
+    try testing.expectEqual(@as(?u32, null), reversed_iter.next());
+}
+
+test "test reverse reverse" {
+    const ints = &[_]u32{ 1, 2, 3, 4 };
+
+    var reversed_iter = reverse(u32, ints)
+        .reverse()
+        .reverse()
+        .reverse();
+
+    var i: usize = 0;
+    while (reversed_iter.next()) |value| : (i += 1) {
+        debug.print("{} {}\n", .{ ints[i], value });
+        try testing.expectEqual(ints[i], value);
+    }
+    try testing.expectEqual(@as(usize, 4), i);
+    try testing.expectEqual(@as(?u32, null), reversed_iter.next());
 }

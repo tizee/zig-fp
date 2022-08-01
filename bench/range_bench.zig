@@ -1,19 +1,17 @@
 const std = @import("std");
-const RangeIterator = @import("../src/range.zig").RangeIterator;
+const range = @import("../src/range.zig").range;
 
-const TIMES: u64 = 500_000;
-const RangeIter_u64 = RangeIterator(u64);
+const TIMES: i64 = 500_000;
 
 fn whileLoop() void {
-    var i: u64 = 0;
-    while (i < TIMES) : (i += 1) {
+    var i: i64 = TIMES;
+    while (i > 0) : (i -= 1) {
         asm volatile ("" ::: "memory");
     }
 }
 
 fn rangeLoop() void {
-    var context = RangeIter_u64.IterContext.init(0, TIMES, 1);
-    var iter = RangeIter_u64.initWithContext(context);
+    var iter = range(i64, TIMES, 0, -1);
 
     while (iter.next()) |_| {
         asm volatile ("" ::: "memory");

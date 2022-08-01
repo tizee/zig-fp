@@ -1,5 +1,6 @@
 const IIterator = @import("iterator/iterator.zig").IIterator;
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const SliceIter = @import("slice.zig");
 const debug = @import("std").debug;
 
 const IterAssert = @import("utils.zig");
@@ -179,4 +180,8 @@ pub fn FilterIterator(comptime Context: type, comptime filterFn: fn (?Context.It
         const FilterContextType = FilterContext(Context, filterFn);
         return IIterator(FilterContextType);
     }
+}
+
+pub fn filter(comptime T: type, s: []const T, comptime filterFn: fn (?T) bool) FilterIterator(SliceIter.SliceContext(T), filterFn) {
+    return SliceIter.slice(T, s).filter(filterFn);
 }

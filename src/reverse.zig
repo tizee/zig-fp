@@ -1,4 +1,5 @@
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const SliceIter = @import("slice.zig");
 
 const IterAssert = @import("utils.zig");
 
@@ -48,8 +49,8 @@ pub fn ReverseContext(comptime Context: type) type {
             return self.context.skipBackFn();
         }
 
-        pub fn reverseFn(self: *Self) bool {
-            return self.context.reverseFn();
+        pub fn reverseFn(self: *Self) void {
+            self.context.reverseFn();
         }
     };
 }
@@ -59,4 +60,8 @@ pub fn ReverseContext(comptime Context: type) type {
 pub fn ReverseIterator(comptime Context: type) type {
     const ReverseContextType = ReverseContext(Context);
     return IDoubleEndedIterator(ReverseContextType);
+}
+
+pub fn reverse(comptime T: type, s: []const T) ReverseIterator(SliceIter.SliceContext(T)) {
+    return SliceIter.slice(T, s).reverse();
 }

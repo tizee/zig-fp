@@ -1,12 +1,12 @@
 const std = @import("std");
 const testing = std.testing;
 const RangeIterator = @import("Range.zig").RangeIterator;
+const range = @import("Range.zig").range;
 const debug = std.debug;
 
 fn testRange(comptime T: type) anyerror!void {
     const Range = RangeIterator(T);
-    var context = Range.IterContext.init(1, 10, 1);
-    var iter = Range.initWithContext(context);
+    var iter = range(T, 1, 10, 1);
 
     var val: T = 1;
     while (iter.next()) |value| {
@@ -27,8 +27,7 @@ fn testRange(comptime T: type) anyerror!void {
         }
     }
 
-    context = Range.IterContext.init(1, 4, 1);
-    iter = Range.initWithContext(context);
+    iter = range(T, 1, 4, 1);
     try testing.expectEqual(@as(?T, 1), iter.next());
     if (iter.skip()) {
         if (iter.next()) |value| {
