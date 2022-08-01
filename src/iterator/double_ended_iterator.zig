@@ -3,7 +3,9 @@ pub const RangeIterator = @import("../range.zig").RangeIterator;
 pub const ReverseIterator = @import("../reverse.zig").ReverseIterator;
 pub const slice = @import("../slice.zig").slice;
 pub const FilterIterator = @import("../filter.zig").FilterIterator;
+pub const FilterMapIterator = @import("../filter-map.zig").FilterMapIterator;
 pub const EnumerateIterator = @import("../enumerate.zig").EnumerateIterator;
+const IterAssert = @import("../utils.zig");
 
 const debug = @import("std").debug;
 const testing = @import("std").testing;
@@ -13,18 +15,7 @@ pub fn IDoubleEndedIterator(
     comptime Context: type,
 ) type {
     comptime {
-        const has_nextFn = @hasDecl(Context, "nextFn");
-        const has_peekAheadFn = @hasDecl(Context, "peekAheadFn");
-        const has_skipFn = @hasDecl(Context, "skipFn");
-        if (!has_nextFn or !has_peekAheadFn or !has_skipFn) {
-            @compileError("Iterator requires a valid context");
-        }
-        const has_nextBackwardFn = @hasDecl(Context, "nextBackFn");
-        const has_skipBackFn = @hasDecl(Context, "skipBackFn");
-        const has_peekBackwardFn = @hasDecl(Context, "peekBackwardFn");
-        if (!has_peekBackwardFn or !has_skipBackFn or !has_nextBackwardFn) {
-            @compileError("Context is invalid for a double-ended iterator");
-        }
+        IterAssert.assertDoubleEndedIteratorContext(Context);
     }
 
     return struct {
@@ -81,7 +72,7 @@ pub fn IDoubleEndedIterator(
             return self.context.skipBackFn();
         }
 
-        // this iterator should be exhausted after filter()
+        // this iterator should be exhausted after enumerate()
         pub fn enumerate(self: *Self) EnumerateIterator(Self.IterContext) {
             return EnumerateIterator(Self.IterContext).initWithInnerContext(self.context);
         }
@@ -93,7 +84,7 @@ pub fn IDoubleEndedIterator(
         }
 
         // this iterator should be exhausted after filter()
-        pub fn filter(self: *Self, comptime f: fn (?ItemType) bool) FilterIterator(Self.IterContext, f) {
+        pub fn filter(self: *Self, comptime f: fn (ItemType) bool) FilterIterator(Self.IterContext, f) {
             return FilterIterator(Self.IterContext, f).initWithInnerContext(self.context);
         }
 
@@ -101,6 +92,11 @@ pub fn IDoubleEndedIterator(
         pub fn reverse(self: *Self) ReverseIterator(Self.IterContext) {
             self.context.reverseFn();
             return ReverseIterator(Self.IterContext).initWithInnerContext(self.context);
+        }
+
+        // this iterator should be exhausted after filter_map()
+        pub fn filter_map(self: *Self, comptime Out: type, comptime f: fn (ItemType) ?Out) FilterMapIterator(Self.IterContext, Out, f) {
+            return FilterMapIterator(Self.IterContext, Out, f).initWithInnerContext(self.context);
         }
 
         /// Consumes the iterator and apply the f for each item
@@ -145,13 +141,8 @@ test "test filter" {
     var iter = slice(u32, ints);
 
     const S = struct {
-        pub fn large(cur: ?u32) bool {
-            if (cur) |value| {
-                if (value > 2) {
-                    return true;
-                }
-            }
-            return false;
+        pub fn large(cur: u32) bool {
+            return cur > 2;
         }
     }.large;
 

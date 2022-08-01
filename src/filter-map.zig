@@ -1,21 +1,17 @@
 const IIterator = @import("iterator/iterator.zig").IIterator;
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 const SliceIter = @import("slice.zig");
-const debug = @import("std").debug;
-
+const FilterIterator = @import("filter.zig");
 const IterAssert = @import("utils.zig");
 
-/// The filter iterator is designed to be lazily evaluated
-/// as the the map iterator
-/// It's just a wrapper over underlying iterator
-pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (Context.ItemType) bool) type {
+pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime Out: type, comptime transformFn: fn (Context.ItemType) ?Out) type {
     comptime {
         IterAssert.assertDoubleEndedIteratorContext(Context);
     }
     return struct {
         const Self = @This();
         pub const InnerContextType = Context;
-        pub const ItemType = Context.ItemType;
+        pub const ItemType = Out;
 
         context: Context,
 
@@ -27,14 +23,13 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
 
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
-            var count: usize = 0;
             var i: usize = 0;
-            while (count < n) {
+            var count: usize = 0;
+            while (count < n) : (i += 1) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (filterFn(value)) {
+                    if (transformFn(value)) |_| {
                         count += 1;
                     }
-                    i += 1;
                 } else {
                     break;
                 }
@@ -42,15 +37,14 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
             return self.context.peekAheadFn(i);
         }
 
-        pub fn peekBackwardFn(self: *Self, n: usize) ?ItemType {
-            var count: usize = 0;
+        pub fn peekBackwardFn(self: *Self, n: usize) bool {
             var i: usize = 0;
-            while (count < n) {
+            var count: usize = 0;
+            while (count < n) : (i += 1) {
                 if (self.context.peekBackwardFn(i)) |value| {
-                    if (filterFn(value)) {
-                        count += 1;
+                    if (transformFn(value)) |_| {
+                        i += 1;
                     }
-                    i += 1;
                 } else {
                     break;
                 }
@@ -59,69 +53,51 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
         }
 
         pub fn nextFn(self: *Self) ?ItemType {
-            while (true) {
-                if (self.context.nextFn()) |value| {
-                    if (filterFn(value)) {
-                        return value;
-                    }
-                } else {
-                    break;
+            while (self.context.nextFn()) |value| {
+                if (transformFn(value)) |res| {
+                    return res;
                 }
             }
             return null;
         }
 
         pub fn nextBackFn(self: *Self) ?ItemType {
-            var i: usize = 0;
-            while (true) {
-                if (self.context.nextBackFn()) |value| {
-                    if (filterFn(value)) {
-                        return value;
-                    }
-                    i += 1;
-                } else {
-                    break;
+            while (self.context.nextBackFn()) |value| {
+                if (transformFn(value)) |res| {
+                    return res;
                 }
             }
             return null;
         }
 
         pub fn skipFn(self: *Self) bool {
-            while (self.context.peekAheadFn(0)) |value| {
-                if (filterFn(value)) {
+            while (self.context.nextFn()) |value| {
+                if (transformFn(value)) |_| {
                     return true;
-                } else {
-                    self.context.skipFn();
                 }
             }
             return false;
         }
 
         pub fn skipBackFn(self: *Self) bool {
-            while (self.context.peekBackwardFn(0)) |value| {
-                if (filterFn(value)) {
+            while (self.context.nextBackFn()) |value| {
+                if (transformFn(value)) |_| {
                     return true;
-                } else {
-                    self.context.skipBackFn();
                 }
             }
             return false;
         }
-
-        pub fn reverseFn(self: *Self) void {
-            self.context.reverseFn();
-        }
     };
 }
 
-pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.ItemType) bool) type {
+pub fn FilterMapContext(comptime Context: type, comptime Out: type, comptime transformFn: fn (Context.ItemType) ?Out) type {
     comptime {
-        IterAssert.assertIteratorContext(Context);
+        IterAssert.isIteratorContext(Context);
     }
     return struct {
         const Self = @This();
         pub const InnerContextType = Context;
-        pub const ItemType = Context.ItemType;
+        pub const ItemType = Out;
 
         context: Context,
 
@@ -131,13 +107,12 @@ pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.Item
             };
         }
 
-        /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
-            var count: usize = 0;
             var i: usize = 0;
+            var count: usize = 0;
             while (count < n) : (i += 1) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (filterFn(value)) {
+                    if (transformFn(value)) |_| {
                         count += 1;
                     }
                 } else {
@@ -149,34 +124,36 @@ pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.Item
 
         pub fn nextFn(self: *Self) ?ItemType {
             while (self.context.nextFn()) |value| {
-                if (filterFn(value)) {
-                    return value;
+                if (transformFn(value)) |res| {
+                    return res;
                 }
             }
             return null;
         }
 
         pub fn skipFn(self: *Self) bool {
-            if (self.nexFn()) |_| {
-                return true;
+            while (self.context.nextFn()) |value| {
+                if (transformFn(value)) |_| {
+                    return true;
+                }
             }
             return false;
         }
     };
 }
 
-/// A Filter Iterator constructor
+/// A FilterMap Iterator struct
 /// It's actually a wrapper over an iterator
-pub fn FilterIterator(comptime Context: type, comptime filterFn: fn (Context.ItemType) bool) type {
+pub fn FilterMapIterator(comptime Context: type, comptime Out: type, comptime transformFn: fn (Context.ItemType) ?Out) type {
     if (IterAssert.isDoubleEndedIteratorContext(Context)) {
-        const FilterContextType = DoubleEndedFilterContext(Context, filterFn);
-        return IDoubleEndedIterator(FilterContextType);
+        const FilterMapContextType = DoubleEndedFilterMapContext(Context, Out, transformFn);
+        return IDoubleEndedIterator(FilterMapContextType);
     } else {
-        const FilterContextType = FilterContext(Context, filterFn);
-        return IIterator(FilterContextType);
+        const FilterMapContextType = FilterMapContext(Context, Out, transformFn);
+        return IIterator(FilterMapContextType);
     }
 }
 
-pub fn filter(comptime T: type, s: []const T, comptime filterFn: fn (T) bool) FilterIterator(SliceIter.SliceContext(T), filterFn) {
-    return SliceIter.slice(T, s).filter(filterFn);
+pub fn filterMap(comptime T: type, comptime Out: type, s: []const T, comptime transformFn: fn (T) ?Out) FilterMapIterator(SliceIter.SliceContext(T), Out, transformFn) {
+    return SliceIter.slice(T, s).filter_map(Out, transformFn);
 }

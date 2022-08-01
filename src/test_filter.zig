@@ -10,11 +10,8 @@ test "test filter with map" {
     var iter = slice(u32, ints);
 
     const S = struct {
-        pub fn is_even(cur: ?u32) bool {
-            if (cur) |value| {
-                return value % 2 == 0;
-            }
-            return false;
+        pub fn is_even(cur: u32) bool {
+            return cur % 2 == 0;
         }
     }.is_even;
     var filter_iter = iter.filter(S);
@@ -40,11 +37,8 @@ test "test filter method" {
     const ints = &[_]u32{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
     const S = struct {
-        pub fn is_even(cur: ?u32) bool {
-            if (cur) |value| {
-                return value % 2 == 0;
-            }
-            return false;
+        pub fn is_even(cur: u32) bool {
+            return cur % 2 == 0;
         }
     }.is_even;
     var filter_iter = filter(u32, ints, S);

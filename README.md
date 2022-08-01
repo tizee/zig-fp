@@ -28,5 +28,4 @@ Currently Zig does not support closure but we can achieve similar functionality 
   - [x] ReverseIterator
   - [x] FilterIterator
   - [x] EnumerateIterator
-  - [ ] ~~FilterMapIterator~~
-  - [ ] ~~FlatMapIterator~~
+  - [x] FilterMapIterator

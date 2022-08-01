@@ -1,17 +1,21 @@
 pub const MapIterator = @import("../map.zig").MapIterator;
+pub const RangeIterator = @import("../range.zig").RangeIterator;
+pub const ReverseIterator = @import("../reverse.zig").ReverseIterator;
+pub const slice = @import("../slice.zig").slice;
 pub const FilterIterator = @import("../filter.zig").FilterIterator;
+pub const FilterMapIterator = @import("../filter-map.zig").FilterMapIterator;
+pub const EnumerateIterator = @import("../enumerate.zig").EnumerateIterator;
+const IterAssert = @import("../utils.zig");
 
-/// Generic Iterator Interface
+const debug = @import("std").debug;
+const testing = @import("std").testing;
+
+/// a general iterator
 pub fn IIterator(
     comptime Context: type,
 ) type {
     comptime {
-        const has_nextFn = @hasDecl(Context, "nextFn");
-        const has_peekAheadFn = @hasDecl(Context, "peekAheadFn");
-        const has_skipFn = @hasDecl(Context, "skipFn");
-        if (!has_nextFn or !has_peekAheadFn or !has_skipFn) {
-            @compileError("Iterator requires a valid context");
-        }
+        IterAssert.assertIteratorContext(Context);
     }
 
     return struct {
@@ -19,14 +23,15 @@ pub fn IIterator(
         pub const IterContext = Context;
         pub const ItemType = Context.ItemType;
 
-        context: *Context,
+        context: Context,
 
-        pub fn initWithContext(context: *IterContext) Self {
+        pub fn initWithContext(context: IterContext) Self {
             return Self{ .context = context };
         }
 
+        // for wrappers like Map, Reverse
         pub fn initWithInnerContext(context: anytype) Self {
-            return Self{ .context = &IterContext.initWithInnerContext(context) };
+            return Self{ .context = Context{ .context = context } };
         }
 
         /// Look at the next item without advancing
@@ -58,14 +63,25 @@ pub fn IIterator(
             return self.context.skipFn();
         }
 
+        // this iterator should be exhausted after enumerate()
+        pub fn enumerate(self: *Self) EnumerateIterator(Self.IterContext) {
+            return EnumerateIterator(Self.IterContext).initWithInnerContext(self.context);
+        }
+
         /// transform ItemType to NewType and return a new Iterator
         pub fn map(self: *Self, comptime NewType: type, comptime f: fn (ItemType) NewType) MapIterator(Self.IterContext, NewType, f) {
             // this iterator should be exhausted after reverse()
-            return MapIterator(Self.IterContext, NewType, f).init(&self.context);
+            return MapIterator(Self.IterContext, NewType, f).initWithInnerContext(self.context);
         }
 
-        pub fn filter(self: *Self, f: fn (item: ItemType) bool) FilterIterator(Self.IterContext, f) {
+        // this iterator should be exhausted after filter()
+        pub fn filter(self: *Self, comptime f: fn (ItemType) bool) FilterIterator(Self.IterContext, f) {
             return FilterIterator(Self.IterContext, f).initWithInnerContext(self.context);
+        }
+
+        // this iterator should be exhausted after filter_map()
+        pub fn filter_map(self: *Self, comptime Out: type, comptime f: fn (ItemType) ?Out) FilterMapIterator(Self.IterContext, Out, f) {
+            return FilterMapIterator(Self.IterContext, Out, f).initWithInnerContext(self.context);
         }
 
         /// Consumes the iterator and apply the f for each item
