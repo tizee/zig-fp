@@ -12,20 +12,33 @@ Currently Zig does not support closure but we can achieve similar functionality 
 ## TODO
 
 - [x] Iterator type
-  - [x] Iterator Interface
+  - [x] General iterator
+    - [x] filter_map
+    - [x] find
+    - [x] fold
     - [x] for_each
     - [x] map
     - [x] next
     - [x] peek
     - [x] peekAhead
-    - [x] skip
-    - [x] fold
     - [x] reduce
+    - [x] skip
+  - [x] Double-ended iterator
+    - [x] filter_map
     - [x] find
-  - [x] RangeIterator
-  - [x] SliceIterator
-  - [x] MapIterator
-  - [x] ReverseIterator
-  - [x] FilterIterator
-  - [x] EnumerateIterator
-  - [x] FilterMapIterator
+    - [x] fold
+    - [x] for_each
+    - [x] map
+    - [x] next
+    - [x] peek
+    - [x] peekAhead
+    - [x] reduce
+    - [x] reverse
+    - [x] skip
+  - [x] RangeIterator (Double-ended iterator)
+  - [x] SliceIterator (Double-ended iterator)
+  - [x] MapIterator (Wrapper)
+  - [x] ReverseIterator (Wrapper)
+  - [x] FilterIterator (Wrapper)
+  - [x] EnumerateIterator (Wrapper)
+  - [x] FilterMapIterator (Wrapper)
