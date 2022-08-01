@@ -1,4 +1,4 @@
-const IIterator = @import("iterator.zig").IIterator;
+const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 
 /// A half open Range for integer types
 pub fn RangeContext(comptime T: type) type {
@@ -11,17 +11,20 @@ pub fn RangeContext(comptime T: type) type {
     return struct {
         const Self = @This();
 
+        pub const ItemType = T;
+
+        direction: bool,
         // current value
-        current: T,
+        current: ItemType,
         // start value
-        start: T,
+        start: ItemType,
         // sentinal end value
-        end: T,
+        end: ItemType,
         // step size
-        step: T,
+        step: ItemType,
 
         /// Look at the nth item without advancing
-        pub fn peekAheadFn(self: *Self, comptime n: usize) ?T {
+        pub fn peekAheadFn(self: *Self, comptime n: usize) ?ItemType {
             var current = self.current;
             var i: usize = 0;
             while (i < n) {
@@ -37,8 +40,25 @@ pub fn RangeContext(comptime T: type) type {
             return current;
         }
 
+        pub fn peekBackwardFn(self: *Self, comptime n: usize) ?ItemType {
+            var current = self.current;
+            var i: usize = 0;
+            // TODO should panic for unsigned data
+            while (i < n) {
+                current -= self.step;
+                i += 1;
+            }
+            if (current == self.end) return null;
+            if (self.step < 0 and current > self.end) {
+                return null;
+            } else if (self.step > 0 and current < self.start) {
+                return null;
+            }
+            return current;
+        }
+
         /// Advances the iterator by step and return the item
-        pub fn nextFn(self: *Self) ?T {
+        pub fn nextFn(self: *Self) ?ItemType {
             if (self.step < 0) {
                 if (self.current <= self.end) {
                     return null;
@@ -52,8 +72,22 @@ pub fn RangeContext(comptime T: type) type {
             return self.current;
         }
 
-        /// Advances the iterator by step and return whether it
-        /// succeeds
+        pub fn nextBackFn(self: *Self) ?ItemType {
+            if (self.step < 0) {
+                if (self.current >= self.start) {
+                    return null;
+                }
+            } else {
+                if (self.current <= self.start) {
+                    return null;
+                }
+            }
+            defer self.current += self.step;
+            return self.current;
+        }
+
+        /// Advances the iterator by step and return the
+        /// state whether it succeeds
         pub fn skipFn(self: *Self) bool {
             if (self.current == self.end) return false;
             if (self.step < 0 and self.current < self.end) {
@@ -66,6 +100,30 @@ pub fn RangeContext(comptime T: type) type {
             return true;
         }
 
+        pub fn skipBackFn(self: *Self) bool {
+            if (self.current == self.start) return false;
+            if (self.step < 0 and self.current >= self.start) {
+                return false;
+            } else if (self.step > 0 and self.current <= self.start) {
+                return false;
+            }
+
+            self.current -= self.step;
+            return true;
+        }
+
+        /// reverse a range means
+        /// This would reset the state of the context
+        /// set the current to the end
+        pub fn reverseFn(self: *Self) void {
+            self.direction = !self.direction;
+            if (!self.direction) {
+                self.current = self.end;
+            } else {
+                self.current = self.start;
+            }
+        }
+
         pub fn init(start: T, end: T, comptime step: T) Self {
             comptime {
                 if (step == 0) {
@@ -73,16 +131,12 @@ pub fn RangeContext(comptime T: type) type {
                 }
             }
 
-            return Self{ .start = start, .current = start, .end = end, .step = step };
-        }
-
-        pub fn reset(self: *Self) Self {
-            return Self.init(self.start, self.end, self.end);
+            return Self{ .direction = true, .start = start, .current = start, .end = end, .step = step };
         }
     };
 }
 
 pub fn RangeIterator(comptime T: type) type {
-    const Context = RangeContext(T);
-    return IIterator(T, Context);
+    const RangeContextType = RangeContext(T);
+    return IDoubleEndedIterator(RangeContextType);
 }

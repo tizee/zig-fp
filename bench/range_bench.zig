@@ -1,8 +1,8 @@
 const std = @import("std");
-const iterator = @import("../src/iterator.zig");
+const RangeIterator = @import("../src/range.zig").RangeIterator;
 
 const TIMES: u64 = 500_000;
-const RangeIter_u64 = iterator.RangeIterator(u64);
+const RangeIter_u64 = RangeIterator(u64);
 
 fn whileLoop() void {
     var i: u64 = 0;

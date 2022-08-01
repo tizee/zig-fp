@@ -18,10 +18,10 @@ test "test MapIterator" {
     const StrIter = SliceIterator(u8);
     const str = "0011";
     var context = StrIter.IterContext.init(str);
-    var slice_iter = StrIter.initWithContext(context);
 
-    const Map = MapIterator(StrIter, bool, transform);
-    var map_iter = Map.init(&slice_iter);
+    const Map = MapIterator(StrIter.IterContext, bool, transform);
+    var map_context = Map.IterContext.init(context);
+    var map_iter = Map.initWithContext(map_context);
 
     const truth = [_]bool{ false, false, true, true };
     var i: usize = 0;

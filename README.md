@@ -1,6 +1,6 @@
 # zig-fp
 
-Iterators in Zig lang.
+Functional programmimng style iterator patterns in Zig lang.
 
 ```
 zig version
@@ -19,14 +19,14 @@ Currently Zig does not support closure but we can achieve similar functionality 
     - [x] peek
     - [x] peekAhead
     - [x] skip
-    - [ ] fold
-    - [ ] reduce
-    - [ ] find
+    - [x] fold
+    - [x] reduce
+    - [x] find
   - [x] RangeIterator
   - [x] SliceIterator
   - [x] MapIterator
   - [x] ReverseIterator
-  - [ ] FlatMapIterator
-  - [ ] Enumerate
-  - [ ] Filter
-  - [ ] FilterMap
+  - [x] FilterIterator
+  - [x] EnumerateIterator
+  - [ ] ~~FilterMapIterator~~
+  - [ ] ~~FlatMapIterator~~

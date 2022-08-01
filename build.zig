@@ -18,11 +18,11 @@ pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const bench_range = b.step("bench_range", "Bench range iterator");
     const bench_range_exe = b.addExecutable("bench-range", "bench/range_bench.zig");
-    bench_range_exe.addPackagePath("../src/iterator.zig", "src/iterator.zig");
+    bench_range_exe.addPackagePath("../src/range.zig", "src/range.zig");
 
     bench_range_exe.setTarget(target);
     bench_range_exe.setBuildMode(mode);
-    bench_range_exe.setOutputDir("./bench");
+    bench_range_exe.setOutputDir("bench");
     bench_range_exe.single_threaded = true;
     bench_range_exe.install();
     const run_cmd = bench_range_exe.run();
