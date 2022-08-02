@@ -4,7 +4,7 @@ pub const SizeHint = struct {
     high: ?usize = null,
 
     pub fn len(hint: *@This()) ?usize {
-        if (hint.max) |value| {
+        if (hint.high) |value| {
             return value;
         }
         return null;

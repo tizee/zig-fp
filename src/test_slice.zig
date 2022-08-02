@@ -47,3 +47,15 @@ test "test slice size_hint" {
         .high = 4,
     });
 }
+
+test "test slice ducking types" {
+    const StrIter = SliceIterator(u8);
+    const str: []const u8 = "abcd";
+
+    var context = StrIter.IterContext.init(str);
+    var iter = StrIter.initWithContext(context);
+
+    var iter2 = slice(str);
+
+    try testing.expect(@TypeOf(iter2) == @TypeOf(iter));
+}

@@ -113,17 +113,18 @@ pub fn IIterator(
             }
 
             /// Look at the nth item without advancing
-            pub fn peekAhead(self: *Self, comptime n: usize) ?ItemType {
+            pub fn peekAhead(self: *Self, n: usize) ?ItemType {
                 return self.context.peekAheadFn(n);
             }
 
-            /// Consumes the iterator and count the length
-            pub fn count(self: *Self) usize {
-                var len: usize = 0;
-                while (self.nextFn()) |_| {
-                    len += 1;
-                }
-                return len;
+            /// Look at the nth item without advancing
+            pub fn peekBackward(self: *Self, n: usize) ?ItemType {
+                return self.context.peekBackwardFn(n);
+            }
+
+            /// count the length
+            pub fn count(self: *Self) ?usize {
+                return self.size_hint().len();
             }
 
             /// Advances the iterator and return the value
@@ -198,9 +199,9 @@ pub fn IIterator(
             }
 
             // Consumes the iterator
-            pub fn find(self: *Self, f: fn (*ItemType) bool) ?ItemType {
+            pub fn find(self: *Self, f: fn (ItemType) bool) ?ItemType {
                 while (self.next()) |value| {
-                    if (f(&value)) {
+                    if (f(value)) {
                         return value;
                     }
                 }
@@ -249,13 +250,9 @@ pub fn IIterator(
                 return self.context.peekAheadFn(n);
             }
 
-            /// Consumes the iterator and count the length
-            pub fn count(self: *Self) usize {
-                var len: usize = 0;
-                while (self.nextFn()) |_| {
-                    len += 1;
-                }
-                return len;
+            /// count the length
+            pub fn count(self: *Self) ?usize {
+                return self.size_hint().len();
             }
 
             /// Advances the iterator and return the value
@@ -360,6 +357,46 @@ test "test enumerate" {
     }
 }
 
+test "test peekAhead peekBackward" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    var i: usize = 0;
+    while (i < str.len) : (i += 1) {
+        var res = iter.peekAhead(i);
+        try testing.expectEqual(@as(?u8, str[i]), res);
+    }
+    try testing.expect(iter.peekAhead(i) == null);
+    i = 0;
+    while (i > 0) : (i -= 1) {
+        var res = iter.peekBackward(i);
+        try testing.expectEqual(@as(?u8, str[str.len - i - 1]), res);
+    }
+    try testing.expect(iter.peekBackward(i) == null);
+}
+
+test "test skipBack" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    var i: usize = 0;
+    while (iter.next()) |value| : (i += 1) {
+        try testing.expectEqual(@as(?u8, str[i]), value);
+    }
+    try testing.expect(i == str.len);
+    try testing.expect(iter.next() == null);
+    i = 0;
+    while (iter.nextBack()) |value| : (i += 1) {
+        try testing.expectEqual(@as(?u8, str[str.len - i - 1]), value);
+    }
+    try testing.expect(i == str.len);
+    try testing.expect(iter.nextBack() == null);
+    i = 0;
+    while (iter.next()) |value| : (i += 1) {
+        try testing.expectEqual(@as(?u8, str[i]), value);
+    }
+}
+
 test "test reverse" {
     const str: []const u8 = "abcd";
     var iter = slice(str);
@@ -414,4 +451,33 @@ test "test fold" {
     var res = iter.fold(u32, 0, Fn);
     debug.print("{}\n", .{res});
     try testing.expectEqual(@as(u32, 6), res);
+}
+
+test "test find" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    const Fn = struct {
+        pub fn findD(value: u8) bool {
+            return value == 'd';
+        }
+    }.findD;
+
+    var res = iter.find(Fn);
+    debug.print("{}\n", .{res.?});
+    try testing.expectEqual(@as(?u8, 'd'), res);
+    try testing.expect(iter.next() == null);
+}
+
+test "test count" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    var len: usize = str.len;
+
+    while (iter.next()) |_| : (len -= 1) {
+        try testing.expectEqual(@as(?usize, len - 1), iter.count());
+    }
+
+    try testing.expect(iter.next() == null);
 }
