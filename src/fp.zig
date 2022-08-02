@@ -1,5 +1,4 @@
-pub const IIterator = @import("iterator/iterator.zig").IIterator;
-pub const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+pub const IIterator = @import("core/iterator.zig").IIterator;
 
 pub const MapIterator = @import("map.zig").MapIterator;
 pub const map = @import("map.zig").map;

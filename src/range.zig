@@ -1,4 +1,6 @@
-const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const math = @import("std").math;
+const IIterator = @import("core/iterator.zig").IIterator;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 const IterAssert = @import("utils.zig");
 /// A half open Range for integer types
@@ -21,6 +23,16 @@ pub fn RangeContext(comptime T: type) type {
         end: ItemType,
         // step size
         step: ItemType,
+
+        pub fn sizeHintFn(self: *Self) SizeHint {
+            const len = math.sub(ItemType, self.end, self.start) catch 0;
+            const steps = math.divCeil(ItemType, len, self.step);
+
+            return SizeHint{
+                .low = steps,
+                .high = steps,
+            };
+        }
 
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, comptime n: usize) ?ItemType {
@@ -129,7 +141,7 @@ pub fn RangeContext(comptime T: type) type {
 
 pub fn RangeIterator(comptime T: type) type {
     const RangeContextType = RangeContext(T);
-    return IDoubleEndedIterator(RangeContextType);
+    return IIterator(RangeContextType);
 }
 
 /// An easy-to-use API

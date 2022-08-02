@@ -1,12 +1,12 @@
-const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 const std = @import("std");
-const mem = std.mem;
-const trait = std.meta.trait;
+const math = std.math;
+const IIterator = @import("core/iterator.zig").IIterator;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 const assertSlice = @import("utils.zig").assertSlice;
 
-const debug = @import("std").debug;
+const debug = std.debug;
 
 /// A thin wrapper over a slice
 /// It's actually a double-ended iterator context
@@ -20,6 +20,21 @@ pub fn SliceContext(comptime T: type) type {
         len: usize,
 
         data: []const ItemType,
+
+        pub fn sizeHintFn(self: Self) SizeHint {
+            if (self.direction) {
+                const len = math.sub(usize, self.len, self.current) catch 0;
+                return SizeHint{
+                    .low = len,
+                    .high = len,
+                };
+            } else {
+                return SizeHint{
+                    .low = self.current,
+                    .high = self.current,
+                };
+            }
+        }
 
         /// Advances the iterator by n*step and return the item
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
@@ -88,7 +103,7 @@ pub fn SliceContext(comptime T: type) type {
 
 pub fn SliceIterator(comptime T: type) type {
     const SliceContextType = SliceContext(T);
-    return IDoubleEndedIterator(SliceContextType);
+    return IIterator(SliceContextType);
 }
 
 /// var iter = slice(u8,"abcd");

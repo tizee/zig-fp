@@ -1,9 +1,9 @@
-const IIterator = @import("iterator/iterator.zig").IIterator;
-const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const IIterator = @import("core/iterator.zig").IIterator;
 const SliceIter = @import("slice.zig");
 const FilterIterator = @import("filter.zig");
 const IterAssert = @import("utils.zig");
 const GetPtrChildType = @import("utils.zig").GetPtrChildType;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn: type) type {
     comptime {
@@ -22,6 +22,16 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
                 .func = func,
                 .context = context,
             };
+        }
+
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn sizeHintFn(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return .{};
+            }
         }
 
         /// Look at the nth item without advancing
@@ -112,6 +122,16 @@ pub fn FilterMapContext(comptime Context: type, comptime TransformFn: type) type
             };
         }
 
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn size_hint(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return .{};
+            }
+        }
+
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             var i: usize = 0;
             var count: usize = 0;
@@ -152,7 +172,7 @@ pub fn FilterMapContext(comptime Context: type, comptime TransformFn: type) type
 pub fn FilterMapIterator(comptime Context: type, comptime TransformFn: type) type {
     if (IterAssert.isDoubleEndedIteratorContext(Context)) {
         const FilterMapContextType = DoubleEndedFilterMapContext(Context, TransformFn);
-        return IDoubleEndedIterator(FilterMapContextType);
+        return IIterator(FilterMapContextType);
     } else {
         const FilterMapContextType = FilterMapContext(Context, TransformFn);
         return IIterator(FilterMapContextType);

@@ -2,6 +2,8 @@ const std = @import("std");
 const testing = std.testing;
 const SliceIterator = @import("slice.zig").SliceIterator;
 const slice = @import("slice.zig").slice;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
+const testIterator = @import("utils.zig").testIterator;
 const debug = std.debug;
 
 test "test SliceIterator" {
@@ -35,4 +37,13 @@ test "test slice" {
         i += 1;
         debug.print("{}\n", .{value});
     }
+}
+
+test "test slice size_hint" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+    try testIterator(iter, str, 4, SizeHint{
+        .low = 4,
+        .high = 4,
+    });
 }

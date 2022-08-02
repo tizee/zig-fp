@@ -1,6 +1,7 @@
 const std = @import("std");
 const meta = std.meta;
 const testing = std.testing;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 pub fn isSlice(comptime Ptr: type) bool {
     const info = @typeInfo(Ptr);
@@ -64,9 +65,15 @@ pub fn assertDoubleEndedIteratorContext(comptime Context: type) void {
     }
 }
 
-pub fn testIterator(it: anytype, expected: anytype) !void {
+pub fn testIterator(it: anytype, expected: anytype, len: usize, hint: SizeHint) !void {
+    var iter_ = it;
+    try testing.expectEqual(hint, iter_.size_hint());
+
+    var i: usize = 0;
     for (expected) |item| {
-        try testing.expectEqual(item, it.next().?);
+        try testing.expectEqual(item, iter_.next().?);
+        i += 1;
     }
-    try testing.expect(it.next() == null);
+    try testing.expect(iter_.next() == null);
+    try testing.expectEqual(len, i);
 }

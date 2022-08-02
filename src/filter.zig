@@ -1,7 +1,7 @@
-const IIterator = @import("iterator/iterator.zig").IIterator;
-const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const IIterator = @import("core/iterator.zig").IIterator;
 const SliceIter = @import("slice.zig");
 const debug = @import("std").debug;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 const IterAssert = @import("utils.zig");
@@ -26,6 +26,15 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
                 .func = func,
                 .context = context,
             };
+        }
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn sizeHintFn(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return {};
+            }
         }
 
         /// Look at the nth item without advancing
@@ -136,6 +145,16 @@ pub fn FilterContext(comptime Context: type, comptime FilterFn: type) type {
             };
         }
 
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn size_hint(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return 0;
+            }
+        }
+
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             var count: usize = 0;
@@ -175,7 +194,7 @@ pub fn FilterContext(comptime Context: type, comptime FilterFn: type) type {
 pub fn FilterIterator(comptime Context: type, comptime FilterFn: type) type {
     if (IterAssert.isDoubleEndedIteratorContext(Context)) {
         const FilterContextType = DoubleEndedFilterContext(Context, FilterFn);
-        return IDoubleEndedIterator(FilterContextType);
+        return IIterator(FilterContextType);
     } else {
         const FilterContextType = FilterContext(Context, FilterFn);
         return IIterator(FilterContextType);

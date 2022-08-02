@@ -6,5 +6,5 @@ test "test all" {
     _ = @import("test_filter.zig");
     _ = @import("test_filter_map.zig");
     _ = @import("test_enumerate.zig");
-    _ = @import("iterator/double_ended_iterator.zig");
+    _ = @import("core/iterator.zig");
 }

@@ -1,5 +1,5 @@
-const IIterator = @import("iterator/iterator.zig").IIterator;
-const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const IIterator = @import("core/iterator.zig").IIterator;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 const SliceIter = @import("slice.zig");
 const GetPtrChildType = @import("utils.zig").GetPtrChildType;
@@ -19,6 +19,16 @@ pub fn DoubleEndedEnumerateContext(comptime Context: type) type {
 
         pub fn init(context: InnerContextType) Self {
             return Self{ .context = context, .index = @as(usize, 0) };
+        }
+
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn sizeHintFn(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return .{};
+            }
         }
 
         /// Look at the nth item without advancing
@@ -90,6 +100,16 @@ pub fn EnumerateContext(comptime Context: type) type {
             return Self{ .context = context, .index = @as(usize, 0) };
         }
 
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn size_hint(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return .{};
+            }
+        }
+
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
@@ -123,7 +143,7 @@ pub fn EnumerateContext(comptime Context: type) type {
 pub fn EnumerateIterator(comptime Context: type) type {
     if (IterAssert.isDoubleEndedIteratorContext(Context)) {
         const EnumerateContextType = DoubleEndedEnumerateContext(Context);
-        return IDoubleEndedIterator(EnumerateContextType);
+        return IIterator(EnumerateContextType);
     } else {
         const EnumerateContextType = EnumerateContext(Context);
         return IIterator(EnumerateContextType);

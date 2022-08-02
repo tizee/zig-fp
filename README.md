@@ -42,7 +42,6 @@ it.range(u32,0,100,1)
 
 - [x] Iterator type
   - [x] General iterator
-    - [ ] size_hint
     - [x] filter_map
     - [x] find
     - [x] fold
@@ -52,9 +51,9 @@ it.range(u32,0,100,1)
     - [x] peek
     - [x] peekAhead
     - [x] reduce
+    - [x] size_hint
     - [x] skip
   - [x] Double-ended iterator
-    - [ ] size_hint
     - [x] filter_map
     - [x] find
     - [x] fold
@@ -65,11 +64,12 @@ it.range(u32,0,100,1)
     - [x] peekAhead
     - [x] reduce
     - [x] reverse
+    - [x] size_hint
     - [x] skip
-  - [x] RangeIterator (Double-ended iterator)
-  - [x] SliceIterator (Double-ended iterator)
-  - [x] MapIterator (Wrapper)
-  - [x] ReverseIterator (Wrapper)
-  - [x] FilterIterator (Wrapper)
   - [x] EnumerateIterator (Wrapper)
+  - [x] FilterIterator (Wrapper)
   - [x] FilterMapIterator (Wrapper)
+  - [x] MapIterator (Wrapper)
+  - [x] RangeIterator (Double-ended iterator)
+  - [x] ReverseIterator (Wrapper)
+  - [x] SliceIterator (Double-ended iterator)

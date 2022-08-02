@@ -1,5 +1,6 @@
-const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const IIterator = @import("core/iterator.zig").IIterator;
 const SliceIter = @import("slice.zig");
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 const IterAssert = @import("utils.zig");
@@ -23,6 +24,16 @@ pub fn ReverseContext(comptime Context: type) type {
             return Self{
                 .context = context,
             };
+        }
+
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn sizeHintFn(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return .{};
+            }
         }
 
         /// Look at the nth item without advancing
@@ -60,7 +71,7 @@ pub fn ReverseContext(comptime Context: type) type {
 // Iter should be a double-ended iterator
 pub fn ReverseIterator(comptime Context: type) type {
     const ReverseContextType = ReverseContext(Context);
-    return IDoubleEndedIterator(ReverseContextType);
+    return IIterator(ReverseContextType);
 }
 
 pub fn reverse(s: anytype) ReverseIterator(SliceIter.SliceContext(GetPtrChildType(@TypeOf(s)))) {

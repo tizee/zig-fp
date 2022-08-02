@@ -1,8 +1,8 @@
-const IIterator = @import("iterator/iterator.zig").IIterator;
-const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
+const IIterator = @import("core/iterator.zig").IIterator;
 const SliceIter = @import("slice.zig");
 const IterAssert = @import("utils.zig");
 const GetPtrChildType = @import("utils.zig").GetPtrChildType;
+const SizeHint = @import("core/size-hint.zig").SizeHint;
 
 pub fn DoubleEndedMapContext(comptime Context: type, comptime TransformFn: type) type {
     comptime {
@@ -21,6 +21,16 @@ pub fn DoubleEndedMapContext(comptime Context: type, comptime TransformFn: type)
                 .context = context,
                 .func = f,
             };
+        }
+
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn sizeHintFn(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return .{};
+            }
         }
 
         /// Look at the nth item without advancing
@@ -80,6 +90,16 @@ pub fn MapContext(comptime Context: type, comptime TransformFn: type) type {
             };
         }
 
+        /// return 0 if the context does not support
+        /// size_hint
+        pub fn sizeHintFn(self: *Self) SizeHint {
+            if (@hasDecl(InnerContextType, "sizeHintFn")) {
+                return self.context.sizeHintFn();
+            } else {
+                return .{};
+            }
+        }
+
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
@@ -106,7 +126,7 @@ pub fn MapContext(comptime Context: type, comptime TransformFn: type) type {
 pub fn MapIterator(comptime Context: type, comptime TransformFn: type) type {
     if (IterAssert.isDoubleEndedIteratorContext(Context)) {
         const MapContextType = DoubleEndedMapContext(Context, TransformFn);
-        return IDoubleEndedIterator(MapContextType);
+        return IIterator(MapContextType);
     } else {
         const MapContextType = MapContext(Context, TransformFn);
         return IIterator(MapContextType);
