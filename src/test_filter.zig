@@ -59,3 +59,18 @@ test "test filter method" {
         debug.print("map_iter result {}\n", .{value});
     }
 }
+
+test "test filter method with std" {
+    var str: []const u8 = "abcd1234";
+
+    var map_iter = filter(str, std.ascii.isDigit);
+
+    var truth: []const u8 = str[4..];
+    var i: usize = 0;
+    while (map_iter.next()) |value| {
+        debug.print("{}\n", .{value});
+        try testing.expectEqual(truth[i], value);
+        i += 1;
+    }
+    try testing.expectEqual(@as(usize, 4), i);
+}
