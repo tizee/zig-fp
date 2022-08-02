@@ -6,6 +6,7 @@ const MapIterator = @import("../map.zig").MapIterator;
 const RangeIterator = @import("../range.zig").RangeIterator;
 const ReverseIterator = @import("../reverse.zig").ReverseIterator;
 const ChainIterator = @import("../chain.zig").ChainIterator;
+const StepIterator = @import("../step.zig").StepIterator;
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -114,17 +115,22 @@ pub fn IIterator(
 
             // for wrappers without Fn like Reverse
             pub fn initWithInnerContext(context: anytype) Self {
-                return Self{ .context = Context{ .context = context } };
+                return Self{ .context = Context.init(context) };
             }
 
             // for wrappers with Fn like Map,Filter,FilterMap
             pub fn initWithFunc(context: anytype, f: anytype) Self {
-                return Self{ .context = Context{ .context = context, .func = f } };
+                return Self{ .context = Context.init(context, f) };
             }
 
-            // for wrappers with Fn like Chain,
+            // for wrappers with combined iterators like Chain
             pub fn initWithTwoContext(a: anytype, b: anytype) Self {
-                return Self{ .context = Context{ .contextA = a, .contextB = b } };
+                return Self{ .context = Context.init(a, b) };
+            }
+
+            // for wrappers with a state like Step
+            pub fn initWithAState(context: anytype, init_state: anytype) Self {
+                return Self{ .context = Context.init(context, init_state) };
             }
 
             /// Look at the next item without advancing
@@ -140,6 +146,51 @@ pub fn IIterator(
             /// Look at the nth item without advancing
             pub fn peekBackward(self: *Self, n: usize) ?ItemType {
                 return self.context.peekBackwardFn(n);
+            }
+
+            // get the next n-th element (n==0, return null)
+            pub fn nextN(self: *Self, n: usize) ?ItemType {
+                if (n == 0) return null;
+                var i: usize = 0;
+                while (i < n - 1) : (i += 1) {
+                    if (!self.context.skipFn()) {
+                        return null;
+                    }
+                }
+                return self.context.nextFn();
+            }
+
+            // Advances the iterator by n items
+            pub fn skipN(self: *Self, n: usize) bool {
+                var i: usize = 0;
+                while (i < n) : (i += 1) {
+                    if (!self.context.skipFn()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Advances the iterator backward by n items
+            pub fn skipBackN(self: *Self, n: usize) bool {
+                var i: usize = 0;
+                while (i < n) : (i += 1) {
+                    if (!self.context.skipBackFn()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            pub fn nextBackN(self: *Self, n: usize) ?ItemType {
+                if (n == 0) return null;
+                var i: usize = 0;
+                while (i < n - 1) : (i += 1) {
+                    if (!self.context.skipBackFn()) {
+                        return null;
+                    }
+                }
+                return self.context.nextBackFn();
             }
 
             /// count the length
@@ -174,7 +225,6 @@ pub fn IIterator(
             /// transform ItemType to NewType and return a new Iterator
             pub fn map(self: *Self, f: anytype) MapIterator(Self.IterContext, @TypeOf(f)) {
                 self.set_moved();
-                // this iterator should be exhausted after reverse()
                 return MapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
@@ -211,18 +261,13 @@ pub fn IIterator(
             }
 
             // Consumes the iterator
-            pub fn step(self: *Self, f: fn (ItemType) bool) bool {
-                while (self.next()) |value| {
-                    if (f(value)) {
-                        return value;
-                    }
-                }
-                return null;
+            pub fn step(self: *Self, init_state: usize) StepIterator(Self.IterContext) {
+                return StepIterator(Self.IterContext).initWithAState(self.context, init_state);
             }
 
             /// Consumes the iterator and apply the f for each item
             pub fn for_each(self: *Self, f: fn (item: ItemType) void) void {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     f(value);
                 }
             }
@@ -230,7 +275,7 @@ pub fn IIterator(
             pub fn reduce(self: *Self, f: fn (accum: ItemType, cur: ItemType) ItemType) ?ItemType {
                 var res = self.peek();
                 _ = self.next();
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     res = f(res.?, value);
                 }
                 return res;
@@ -239,7 +284,7 @@ pub fn IIterator(
             // Consumes the iterator
             pub fn fold(self: *Self, comptime NewType: type, init: NewType, f: fn (NewType, ItemType) NewType) NewType {
                 var res = init;
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     res = f(res, value);
                 }
                 return res;
@@ -247,7 +292,7 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn find(self: *Self, f: fn (ItemType) bool) ?ItemType {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     if (f(value)) {
                         return value;
                     }
@@ -257,7 +302,7 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn all(self: *Self, f: fn (ItemType) bool) bool {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     if (!f(value)) {
                         return false;
                     }
@@ -267,7 +312,7 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn any(self: *Self, f: fn (ItemType) bool) bool {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     if (f(value)) {
                         return true;
                     }
@@ -339,17 +384,22 @@ pub fn IIterator(
 
             // for wrappers without Fn like Reverse
             pub fn initWithInnerContext(context: anytype) Self {
-                return Self{ .context = Context{ .context = context } };
+                return Self{ .context = Context.init(context) };
             }
 
             // for wrappers with Fn like Map,Filter,FilterMap
             pub fn initWithFunc(context: anytype, f: anytype) Self {
-                return Self{ .context = Context{ .context = context, .func = f } };
+                return Self{ .context = Context.init(context, f) };
             }
 
-            // for wrappers with Fn like Chain,
+            // for wrappers with combined iterators like Chain
             pub fn initWithTwoContext(a: anytype, b: anytype) Self {
-                return Self{ .context = Context{ .contextA = a, .contextB = b } };
+                return Self{ .context = Context.init(a, b) };
+            }
+
+            // for wrappers with a state like Step
+            pub fn initWithAState(context: anytype, init_state: anytype) Self {
+                return Self{ .context = Context.init(context, init_state) };
             }
 
             /// Look at the next item without advancing
@@ -360,6 +410,29 @@ pub fn IIterator(
             /// Look at the nth item without advancing
             pub fn peekAhead(self: *Self, n: usize) ?ItemType {
                 return self.context.peekAheadFn(n);
+            }
+
+            // get the next n-th element (n==0, return null)
+            pub fn nextN(self: *Self, n: usize) ?ItemType {
+                if (n == 0) return null;
+                var i: usize = 0;
+                while (i < n - 1) : (i += 1) {
+                    if (!self.context.skipFn()) {
+                        return null;
+                    }
+                }
+                return self.context.nextFn();
+            }
+
+            // Advances the iterator by n items
+            pub fn skipN(self: *Self, n: usize) bool {
+                var i: usize = 0;
+                while (i < n) : (i += 1) {
+                    if (!self.context.skipFn()) {
+                        return false;
+                    }
+                }
+                return true;
             }
 
             /// count the length
@@ -385,7 +458,6 @@ pub fn IIterator(
             /// transform ItemType to NewType and return a new Iterator
             pub fn map(self: *Self, f: anytype) MapIterator(Self.IterContext, @TypeOf(f)) {
                 self.set_moved();
-                // this iterator should be exhausted after reverse()
                 return MapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
@@ -415,18 +487,13 @@ pub fn IIterator(
             }
 
             // Consumes the iterator
-            pub fn step(self: *Self, f: fn (ItemType) bool) bool {
-                while (self.next()) |value| {
-                    if (f(value)) {
-                        return value;
-                    }
-                }
-                return null;
+            pub fn step(self: *Self, init_state: usize) StepIterator(Self.IterContext) {
+                return StepIterator(Self.IterContext).initWithAState(self.context, init_state);
             }
 
             /// Consumes the iterator and apply the f for each item
             pub fn for_each(self: *Self, f: fn (item: ItemType) void) void {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     f(value);
                 }
             }
@@ -434,7 +501,7 @@ pub fn IIterator(
             pub fn reduce(self: *Self, f: fn (accum: ItemType, cur: ItemType) ItemType) ?ItemType {
                 var res = self.peek();
                 _ = self.next();
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     res = f(res.?, value);
                 }
                 return res;
@@ -443,7 +510,7 @@ pub fn IIterator(
             // Consumes the iterator
             pub fn fold(self: *Self, comptime NewType: type, init: NewType, f: fn (NewType, ItemType) NewType) NewType {
                 var res = init;
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     res = f(res, value);
                 }
                 return res;
@@ -451,7 +518,7 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn find(self: *Self, f: fn (ItemType) bool) ?ItemType {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     if (f(value)) {
                         return value;
                     }
@@ -461,7 +528,7 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn all(self: *Self, f: fn (ItemType) bool) bool {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     if (!f(value)) {
                         return false;
                     }
@@ -471,7 +538,7 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn any(self: *Self, f: fn (ItemType) bool) bool {
-                while (self.next()) |value| {
+                while (self.context.nextFn()) |value| {
                     if (f(value)) {
                         return true;
                     }
@@ -725,4 +792,38 @@ test "test into_array" {
     }
 }
 
-test "moved context" {}
+test "test nextN and nextBackN" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+    var iter2 = slice(str);
+
+    while (iter.next()) |value| {
+        try testing.expectEqual(value, iter2.nextN(1).?);
+    }
+    try testing.expect(iter.next() == null);
+    try testing.expect(iter2.next() == null);
+
+    while (iter.nextBack()) |value| {
+        try testing.expectEqual(value, iter2.nextBackN(1).?);
+    }
+    try testing.expect(iter.nextBack() == null);
+    try testing.expect(iter2.nextBackN(1) == null);
+}
+
+test "test skipN and skipBackN " {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+    var iter2 = slice(str);
+
+    _ = iter.skipN(1);
+    try IterAssert.testIterator(iter, str[1..], 3, .{
+        .low = 3,
+        .high = 3,
+    });
+
+    _ = iter2.skipN(2);
+    try IterAssert.testIterator(iter2, str[2..], 2, .{
+        .low = 2,
+        .high = 2,
+    });
+}

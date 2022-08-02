@@ -17,12 +17,12 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
         pub const InnerContextType = Context;
         pub const ItemType = Context.ItemType;
 
-        func: FilterFn,
+        filterFn: FilterFn,
         context: Context,
 
-        pub fn init(context: InnerContextType, func: FilterFn) Self {
+        pub fn init(context: InnerContextType, filterFn: FilterFn) Self {
             return Self{
-                .func = func,
+                .filterFn = filterFn,
                 .context = context,
             };
         }
@@ -42,7 +42,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
             var i: usize = 0;
             while (count < n) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (self.func(value)) {
+                    if (self.filterFn(value)) {
                         count += 1;
                     }
                     i += 1;
@@ -58,7 +58,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
             var i: usize = 0;
             while (count < n) {
                 if (self.context.peekBackwardFn(i)) |value| {
-                    if (self.func(value)) {
+                    if (self.filterFn(value)) {
                         count += 1;
                     }
                     i += 1;
@@ -72,7 +72,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
         pub fn nextFn(self: *Self) ?ItemType {
             while (true) {
                 if (self.context.nextFn()) |value| {
-                    if (self.func(value)) {
+                    if (self.filterFn(value)) {
                         return value;
                     }
                 } else {
@@ -86,7 +86,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
             var i: usize = 0;
             while (true) {
                 if (self.context.nextBackFn()) |value| {
-                    if (self.func(value)) {
+                    if (self.filterFn(value)) {
                         return value;
                     }
                     i += 1;
@@ -99,7 +99,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
 
         pub fn skipFn(self: *Self) bool {
             while (self.context.peekAheadFn(0)) |value| {
-                if (self.func(value)) {
+                if (self.filterFn(value)) {
                     return true;
                 } else {
                     self.context.skipFn();
@@ -110,7 +110,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type)
 
         pub fn skipBackFn(self: *Self) bool {
             while (self.context.peekBackwardFn(0)) |value| {
-                if (self.func(value)) {
+                if (self.filterFn(value)) {
                     return true;
                 } else {
                     self.context.skipBackFn();
@@ -134,12 +134,12 @@ pub fn FilterContext(comptime Context: type, comptime FilterFn: type) type {
         pub const InnerContextType = Context;
         pub const ItemType = Context.ItemType;
 
-        func: FilterFn = null,
+        filterFn: FilterFn = null,
         context: Context,
 
-        pub fn init(context: InnerContextType, func: FilterFn) Self {
+        pub fn init(context: InnerContextType, filterFn: FilterFn) Self {
             return Self{
-                .func = func,
+                .filterFn = filterFn,
                 .context = context,
             };
         }
@@ -160,7 +160,7 @@ pub fn FilterContext(comptime Context: type, comptime FilterFn: type) type {
             var i: usize = 0;
             while (count < n) : (i += 1) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (self.func(value)) {
+                    if (self.filterFn(value)) {
                         count += 1;
                     }
                 } else {
@@ -172,7 +172,7 @@ pub fn FilterContext(comptime Context: type, comptime FilterFn: type) type {
 
         pub fn nextFn(self: *Self) ?ItemType {
             while (self.context.nextFn()) |value| {
-                if (self.func(value)) {
+                if (self.filterFn(value)) {
                     return value;
                 }
             }

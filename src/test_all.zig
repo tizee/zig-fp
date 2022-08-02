@@ -12,4 +12,5 @@ test "test all" {
     _ = @import("range.zig");
     _ = @import("reverse.zig");
     _ = @import("slice.zig");
+    _ = @import("step.zig");
 }

@@ -14,12 +14,12 @@ pub fn DoubleEndedMapContext(comptime Context: type, comptime TransformFn: type)
         pub const ItemType = @typeInfo(TransformFn).Fn.return_type.?;
 
         context: Context,
-        func: TransformFn = undefined,
+        transfromFn: TransformFn = undefined,
 
         pub fn init(context: InnerContextType, f: TransformFn) Self {
             return Self{
                 .context = context,
-                .func = f,
+                .transfromFn = f,
             };
         }
 
@@ -36,28 +36,28 @@ pub fn DoubleEndedMapContext(comptime Context: type, comptime TransformFn: type)
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
-                return self.func(value);
+                return self.transfromFn(value);
             }
             return null;
         }
 
         pub fn peekBackwardFn(self: *Self, n: usize) bool {
             if (self.context.peekBackwardFn(n)) |value| {
-                return self.func(value);
+                return self.transfromFn(value);
             }
             return null;
         }
 
         pub fn nextFn(self: *Self) ?ItemType {
             if (self.context.nextFn()) |value| {
-                return self.func(value);
+                return self.transfromFn(value);
             }
             return null;
         }
 
         pub fn nextBackFn(self: *Self) ?ItemType {
             if (self.context.nextBackFn()) |value| {
-                return self.func(value);
+                return self.transfromFn(value);
             }
             return null;
         }
@@ -82,7 +82,7 @@ pub fn MapContext(comptime Context: type, comptime TransformFn: type) type {
         pub const ItemType = @typeInfo(TransformFn).Fn.return_type.?;
 
         context: Context,
-        func: TransformFn = undefined,
+        transfromFn: TransformFn = undefined,
 
         pub fn init(context: InnerContextType) Self {
             return Self{
@@ -103,14 +103,14 @@ pub fn MapContext(comptime Context: type, comptime TransformFn: type) type {
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
-                return self.func(value);
+                return self.transfromFn(value);
             }
             return null;
         }
 
         pub fn nextFn(self: *Self) ?ItemType {
             if (self.context.nextFn()) |value| {
-                return self.func(value);
+                return self.transfromFn(value);
             }
             return null;
         }

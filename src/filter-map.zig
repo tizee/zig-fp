@@ -13,12 +13,12 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
         pub const InnerContextType = Context;
         pub const ItemType = @typeInfo(TransformFn).Fn.return_type.?;
 
-        func: TransformFn,
+        transformFn: TransformFn,
         context: Context,
 
-        pub fn init(context: InnerContextType, func: TransformFn) Self {
+        pub fn init(context: InnerContextType, transformFn: TransformFn) Self {
             return Self{
-                .func = func,
+                .transformFn = transformFn,
                 .context = context,
             };
         }
@@ -39,7 +39,7 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
             var count: usize = 0;
             while (count < n) : (i += 1) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (self.func(value)) |_| {
+                    if (self.transformFn(value)) |_| {
                         count += 1;
                     }
                 } else {
@@ -54,7 +54,7 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
             var count: usize = 0;
             while (count < n) : (i += 1) {
                 if (self.context.peekBackwardFn(i)) |value| {
-                    if (self.func(value)) |_| {
+                    if (self.transformFn(value)) |_| {
                         i += 1;
                     }
                 } else {
@@ -66,7 +66,7 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
 
         pub fn nextFn(self: *Self) ?ItemType {
             while (self.context.nextFn()) |value| {
-                if (self.func(value)) |res| {
+                if (self.transformFn(value)) |res| {
                     return res;
                 }
             }
@@ -75,7 +75,7 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
 
         pub fn nextBackFn(self: *Self) ?ItemType {
             while (self.context.nextBackFn()) |value| {
-                if (self.func(value)) |res| {
+                if (self.transformFn(value)) |res| {
                     return res;
                 }
             }
@@ -84,7 +84,7 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
 
         pub fn skipFn(self: *Self) bool {
             while (self.context.nextFn()) |value| {
-                if (self.func(value)) |_| {
+                if (self.transformFn(value)) |_| {
                     return true;
                 }
             }
@@ -93,7 +93,7 @@ pub fn DoubleEndedFilterMapContext(comptime Context: type, comptime TransformFn:
 
         pub fn skipBackFn(self: *Self) bool {
             while (self.context.nextBackFn()) |value| {
-                if (self.func(value)) |_| {
+                if (self.transformFn(value)) |_| {
                     return true;
                 }
             }
@@ -111,13 +111,13 @@ pub fn FilterMapContext(comptime Context: type, comptime TransformFn: type) type
         pub const InnerContextType = Context;
         pub const ItemType = @typeInfo(TransformFn).Fn.return_type.?;
 
-        func: TransformFn = undefined,
+        transformFn: TransformFn = undefined,
         context: Context = undefined,
 
-        pub fn init(context: InnerContextType, func: TransformFn) Self {
+        pub fn init(context: InnerContextType, transformFn: TransformFn) Self {
             return Self{
                 .context = context,
-                .func = func,
+                .transformFn = transformFn,
             };
         }
 
@@ -136,7 +136,7 @@ pub fn FilterMapContext(comptime Context: type, comptime TransformFn: type) type
             var count: usize = 0;
             while (count < n) : (i += 1) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (self.func(value)) |_| {
+                    if (self.transformFn(value)) |_| {
                         count += 1;
                     }
                 } else {
@@ -148,7 +148,7 @@ pub fn FilterMapContext(comptime Context: type, comptime TransformFn: type) type
 
         pub fn nextFn(self: *Self) ?ItemType {
             while (self.context.nextFn()) |value| {
-                if (self.func(value)) |res| {
+                if (self.transformFn(value)) |res| {
                     return res;
                 }
             }
@@ -157,7 +157,7 @@ pub fn FilterMapContext(comptime Context: type, comptime TransformFn: type) type
 
         pub fn skipFn(self: *Self) bool {
             while (self.context.nextFn()) |value| {
-                if (self.func(value)) |_| {
+                if (self.transformFn(value)) |_| {
                     return true;
                 }
             }
