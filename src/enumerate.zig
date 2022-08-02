@@ -2,6 +2,7 @@ const IIterator = @import("iterator/iterator.zig").IIterator;
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 
 const SliceIter = @import("slice.zig");
+const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 const IterAssert = @import("utils.zig");
 
 pub fn DoubleEndedEnumerateContext(comptime Context: type) type {
@@ -129,6 +130,6 @@ pub fn EnumerateIterator(comptime Context: type) type {
     }
 }
 
-pub fn enumerate(comptime T: type, s: []const T) EnumerateIterator(SliceIter.SliceContext(T)) {
-    return SliceIter.slice(T, s).enumerate();
+pub fn enumerate(s: anytype) EnumerateIterator(SliceIter.SliceContext(GetPtrChildType(@TypeOf(s)))) {
+    return SliceIter.slice(s).enumerate();
 }

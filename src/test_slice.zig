@@ -26,8 +26,8 @@ test "test SliceIterator" {
 }
 
 test "test slice" {
-    const str = "abcd";
-    var iter = slice(u8, str);
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
 
     var i: usize = 0;
     while (iter.next()) |value| {

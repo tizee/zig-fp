@@ -1,5 +1,41 @@
 const std = @import("std");
+const meta = std.meta;
 const testing = std.testing;
+
+pub fn isSlice(comptime Ptr: type) bool {
+    const info = @typeInfo(Ptr);
+    return info == .Pointer and info.Pointer.size == .Slice;
+}
+
+pub fn assertSlice(comptime Ptr: type) void {
+    if (!isSlice(Ptr)) {
+        @compileError("require a Slice type");
+    }
+}
+
+pub fn GetPtrChildType(comptime Ptr: type) type {
+    const info = @typeInfo(Ptr);
+    if (info == .Array) {
+        return info.Array.child;
+    } else if (info == .Pointer and info.Pointer.size == .Slice) {
+        return info.Pointer.child;
+    }
+    return Ptr;
+}
+
+pub fn isFloat(comptime T: type) bool {
+    return @typeInfo(T) == .Float;
+}
+
+pub fn isInteger(comptime T: type) bool {
+    return @typeInfo(T) == .Int;
+}
+
+pub fn assertNum(comptime T: type) void {
+    if (!isInteger(T) and !isFloat(T)) {
+        @compileError("require a Number type");
+    }
+}
 
 pub fn isIteratorContext(comptime Context: type) bool {
     const has_nextFn = @hasDecl(Context, "nextFn");

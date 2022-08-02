@@ -29,9 +29,14 @@ pub fn IDoubleEndedIterator(
             return Self{ .context = context };
         }
 
-        // for wrappers like Map, Reverse
+        // for wrappers without Fn like Reverse
         pub fn initWithInnerContext(context: anytype) Self {
             return Self{ .context = Context{ .context = context } };
+        }
+
+        // for wrappers with Fn like Map,Filter,FilterMap
+        pub fn initWithFunc(context: anytype, f: anytype) Self {
+            return Self{ .context = Context{ .context = context, .func = f } };
         }
 
         /// Look at the next item without advancing
@@ -78,14 +83,14 @@ pub fn IDoubleEndedIterator(
         }
 
         /// transform ItemType to NewType and return a new Iterator
-        pub fn map(self: *Self, comptime NewType: type, comptime f: fn (ItemType) NewType) MapIterator(Self.IterContext, NewType, f) {
+        pub fn map(self: *Self, f: anytype) MapIterator(Self.IterContext, @TypeOf(f)) {
             // this iterator should be exhausted after reverse()
-            return MapIterator(Self.IterContext, NewType, f).initWithInnerContext(self.context);
+            return MapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
         }
 
         // this iterator should be exhausted after filter()
-        pub fn filter(self: *Self, comptime f: fn (ItemType) bool) FilterIterator(Self.IterContext, f) {
-            return FilterIterator(Self.IterContext, f).initWithInnerContext(self.context);
+        pub fn filter(self: *Self, f: anytype) FilterIterator(Self.IterContext, @TypeOf(f)) {
+            return FilterIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
         }
 
         // this iterator should be exhausted after reverse()
@@ -95,8 +100,8 @@ pub fn IDoubleEndedIterator(
         }
 
         // this iterator should be exhausted after filter_map()
-        pub fn filter_map(self: *Self, comptime Out: type, comptime f: fn (ItemType) ?Out) FilterMapIterator(Self.IterContext, Out, f) {
-            return FilterMapIterator(Self.IterContext, Out, f).initWithInnerContext(self.context);
+        pub fn filter_map(self: *Self, f: anytype) FilterMapIterator(Self.IterContext, @TypeOf(f)) {
+            return FilterMapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
         }
 
         /// Consumes the iterator and apply the f for each item
@@ -116,7 +121,7 @@ pub fn IDoubleEndedIterator(
         }
 
         // Consumes the iterator
-        pub fn fold(self: *Self, comptime NewType: type, init: NewType, f: fn (accum: NewType, cur: ItemType) NewType) NewType {
+        pub fn fold(self: *Self, comptime NewType: type, init: NewType, f: fn (NewType, ItemType) NewType) NewType {
             var res = init;
             while (self.next()) |value| {
                 res = f(res, value);
@@ -125,7 +130,7 @@ pub fn IDoubleEndedIterator(
         }
 
         // Consumes the iterator
-        pub fn find(self: *Self, f: fn (cur: *ItemType) bool) ?ItemType {
+        pub fn find(self: *Self, f: fn (*ItemType) bool) ?ItemType {
             while (self.next()) |value| {
                 if (f(&value)) {
                     return value;
@@ -137,8 +142,8 @@ pub fn IDoubleEndedIterator(
 }
 
 test "test filter" {
-    const ints = &[_]u32{ 1, 2, 3, 4 };
-    var iter = slice(u32, ints);
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4 };
+    var iter = slice(ints);
 
     const S = struct {
         pub fn large(cur: u32) bool {
@@ -146,7 +151,7 @@ test "test filter" {
         }
     }.large;
 
-    const truth = [_]u32{ 3, 4 };
+    var truth: []const u32 = &[_]u32{ 3, 4 };
     var filter_iter = iter.filter(S);
     var i: usize = 0;
     while (filter_iter.next()) |value| {
@@ -157,7 +162,8 @@ test "test filter" {
 }
 
 test "test enumerate" {
-    var iter = slice(u8, "abcd");
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
     var enum_iter = iter.enumerate();
 
     var i: usize = 0;
@@ -169,10 +175,11 @@ test "test enumerate" {
 }
 
 test "test reverse" {
-    var iter = slice(u8, "abcd");
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
     var reversed_iter = iter.reverse();
 
-    const truth = "dcba";
+    const truth: []const u8 = "dcba";
     var i: usize = 0;
     while (reversed_iter.next()) |value| {
         try testing.expectEqual(truth[i], value);
@@ -181,7 +188,8 @@ test "test reverse" {
 }
 
 test "test reduce" {
-    var iter = slice(u32, &[_]u32{ 1, 2, 3, 4 });
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4 };
+    var iter = slice(ints);
 
     const Fn = struct {
         pub fn sum(accum: u32, cur: u32) u32 {
@@ -195,7 +203,8 @@ test "test reduce" {
 }
 
 test "test for each" {
-    var iter = slice(u8, "abcd");
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
 
     const Fn = struct {
         pub fn print(cur: u8) void {
@@ -207,7 +216,8 @@ test "test for each" {
 }
 
 test "test fold" {
-    var iter = slice(u8, "abcd");
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
 
     const Fn = struct {
         pub fn sum(accum: u32, cur: u8) u32 {

@@ -3,12 +3,13 @@ const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoub
 const SliceIter = @import("slice.zig");
 const debug = @import("std").debug;
 
+const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 const IterAssert = @import("utils.zig");
 
 /// The filter iterator is designed to be lazily evaluated
 /// as the the map iterator
 /// It's just a wrapper over underlying iterator
-pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (Context.ItemType) bool) type {
+pub fn DoubleEndedFilterContext(comptime Context: type, comptime FilterFn: type) type {
     comptime {
         IterAssert.assertDoubleEndedIteratorContext(Context);
     }
@@ -17,10 +18,12 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
         pub const InnerContextType = Context;
         pub const ItemType = Context.ItemType;
 
+        func: FilterFn,
         context: Context,
 
-        pub fn init(context: InnerContextType) Self {
+        pub fn init(context: InnerContextType, func: FilterFn) Self {
             return Self{
+                .func = func,
                 .context = context,
             };
         }
@@ -31,7 +34,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
             var i: usize = 0;
             while (count < n) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (filterFn(value)) {
+                    if (self.func(value)) {
                         count += 1;
                     }
                     i += 1;
@@ -47,7 +50,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
             var i: usize = 0;
             while (count < n) {
                 if (self.context.peekBackwardFn(i)) |value| {
-                    if (filterFn(value)) {
+                    if (self.func(value)) {
                         count += 1;
                     }
                     i += 1;
@@ -61,7 +64,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
         pub fn nextFn(self: *Self) ?ItemType {
             while (true) {
                 if (self.context.nextFn()) |value| {
-                    if (filterFn(value)) {
+                    if (self.func(value)) {
                         return value;
                     }
                 } else {
@@ -75,7 +78,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
             var i: usize = 0;
             while (true) {
                 if (self.context.nextBackFn()) |value| {
-                    if (filterFn(value)) {
+                    if (self.func(value)) {
                         return value;
                     }
                     i += 1;
@@ -88,7 +91,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
 
         pub fn skipFn(self: *Self) bool {
             while (self.context.peekAheadFn(0)) |value| {
-                if (filterFn(value)) {
+                if (self.func(value)) {
                     return true;
                 } else {
                     self.context.skipFn();
@@ -99,7 +102,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
 
         pub fn skipBackFn(self: *Self) bool {
             while (self.context.peekBackwardFn(0)) |value| {
-                if (filterFn(value)) {
+                if (self.func(value)) {
                     return true;
                 } else {
                     self.context.skipBackFn();
@@ -114,7 +117,7 @@ pub fn DoubleEndedFilterContext(comptime Context: type, comptime filterFn: fn (C
     };
 }
 
-pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.ItemType) bool) type {
+pub fn FilterContext(comptime Context: type, comptime FilterFn: type) type {
     comptime {
         IterAssert.assertIteratorContext(Context);
     }
@@ -123,10 +126,12 @@ pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.Item
         pub const InnerContextType = Context;
         pub const ItemType = Context.ItemType;
 
+        func: FilterFn = null,
         context: Context,
 
-        pub fn init(context: InnerContextType) Self {
+        pub fn init(context: InnerContextType, func: FilterFn) Self {
             return Self{
+                .func = func,
                 .context = context,
             };
         }
@@ -137,7 +142,7 @@ pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.Item
             var i: usize = 0;
             while (count < n) : (i += 1) {
                 if (self.context.peekAheadFn(i)) |value| {
-                    if (filterFn(value)) {
+                    if (self.func(value)) {
                         count += 1;
                     }
                 } else {
@@ -149,7 +154,7 @@ pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.Item
 
         pub fn nextFn(self: *Self) ?ItemType {
             while (self.context.nextFn()) |value| {
-                if (filterFn(value)) {
+                if (self.func(value)) {
                     return value;
                 }
             }
@@ -167,16 +172,16 @@ pub fn FilterContext(comptime Context: type, comptime filterFn: fn (Context.Item
 
 /// A Filter Iterator constructor
 /// It's actually a wrapper over an iterator
-pub fn FilterIterator(comptime Context: type, comptime filterFn: fn (Context.ItemType) bool) type {
+pub fn FilterIterator(comptime Context: type, comptime FilterFn: type) type {
     if (IterAssert.isDoubleEndedIteratorContext(Context)) {
-        const FilterContextType = DoubleEndedFilterContext(Context, filterFn);
+        const FilterContextType = DoubleEndedFilterContext(Context, FilterFn);
         return IDoubleEndedIterator(FilterContextType);
     } else {
-        const FilterContextType = FilterContext(Context, filterFn);
+        const FilterContextType = FilterContext(Context, FilterFn);
         return IIterator(FilterContextType);
     }
 }
 
-pub fn filter(comptime T: type, s: []const T, comptime filterFn: fn (T) bool) FilterIterator(SliceIter.SliceContext(T), filterFn) {
-    return SliceIter.slice(T, s).filter(filterFn);
+pub fn filter(s: anytype, func: anytype) FilterIterator(SliceIter.SliceContext(GetPtrChildType(@TypeOf(s))), @TypeOf(func)) {
+    return SliceIter.slice(s).filter(func);
 }

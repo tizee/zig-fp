@@ -2,49 +2,52 @@ const IIterator = @import("iterator/iterator.zig").IIterator;
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 const SliceIter = @import("slice.zig");
 const IterAssert = @import("utils.zig");
+const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 
-pub fn DoubleEndedMapContext(comptime Context: type, comptime Out: type, comptime transformFn: fn (Context.ItemType) Out) type {
+pub fn DoubleEndedMapContext(comptime Context: type, comptime TransformFn: type) type {
     comptime {
         IterAssert.assertDoubleEndedIteratorContext(Context);
     }
     return struct {
         const Self = @This();
         pub const InnerContextType = Context;
-        pub const ItemType = Out;
+        pub const ItemType = @typeInfo(TransformFn).Fn.return_type.?;
 
         context: Context,
+        func: TransformFn = undefined,
 
-        pub fn init(context: InnerContextType) Self {
+        pub fn init(context: InnerContextType, f: TransformFn) Self {
             return Self{
                 .context = context,
+                .func = f,
             };
         }
 
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
-                return transformFn(value);
+                return self.func(value);
             }
             return null;
         }
 
         pub fn peekBackwardFn(self: *Self, n: usize) bool {
             if (self.context.peekBackwardFn(n)) |value| {
-                return transformFn(value);
+                return self.func(value);
             }
             return null;
         }
 
         pub fn nextFn(self: *Self) ?ItemType {
             if (self.context.nextFn()) |value| {
-                return transformFn(value);
+                return self.func(value);
             }
             return null;
         }
 
         pub fn nextBackFn(self: *Self) ?ItemType {
             if (self.context.nextBackFn()) |value| {
-                return transformFn(value);
+                return self.func(value);
             }
             return null;
         }
@@ -59,16 +62,17 @@ pub fn DoubleEndedMapContext(comptime Context: type, comptime Out: type, comptim
     };
 }
 
-pub fn MapContext(comptime Context: type, comptime Out: type, comptime transformFn: fn (Context.ItemType) Out) type {
+pub fn MapContext(comptime Context: type, comptime TransformFn: type) type {
     comptime {
         IterAssert.isIteratorContext(Context);
     }
     return struct {
         const Self = @This();
         pub const InnerContextType = Context;
-        pub const ItemType = Out;
+        pub const ItemType = @typeInfo(TransformFn).Fn.return_type.?;
 
         context: Context,
+        func: TransformFn = undefined,
 
         pub fn init(context: InnerContextType) Self {
             return Self{
@@ -79,14 +83,14 @@ pub fn MapContext(comptime Context: type, comptime Out: type, comptime transform
         /// Look at the nth item without advancing
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
             if (self.context.peekAheadFn(n)) |value| {
-                return transformFn(value);
+                return self.func(value);
             }
             return null;
         }
 
         pub fn nextFn(self: *Self) ?ItemType {
             if (self.context.nextFn()) |value| {
-                return transformFn(value);
+                return self.func(value);
             }
             return null;
         }
@@ -99,16 +103,16 @@ pub fn MapContext(comptime Context: type, comptime Out: type, comptime transform
 
 /// A Map Iterator struct
 /// It's actually a wrapper over an iterator
-pub fn MapIterator(comptime Context: type, comptime Out: type, comptime transformFn: fn (Context.ItemType) Out) type {
+pub fn MapIterator(comptime Context: type, comptime TransformFn: type) type {
     if (IterAssert.isDoubleEndedIteratorContext(Context)) {
-        const MapContextType = DoubleEndedMapContext(Context, Out, transformFn);
+        const MapContextType = DoubleEndedMapContext(Context, TransformFn);
         return IDoubleEndedIterator(MapContextType);
     } else {
-        const MapContextType = MapContext(Context, Out, transformFn);
+        const MapContextType = MapContext(Context, TransformFn);
         return IIterator(MapContextType);
     }
 }
 
-pub fn map(comptime T: type, comptime Out: type, s: []const T, comptime transformFn: fn (T) Out) MapIterator(SliceIter.SliceContext(T), Out, transformFn) {
-    return SliceIter.slice(T, s).map(Out, transformFn);
+pub fn map(s: anytype, transformFn: anytype) MapIterator(SliceIter.SliceContext(GetPtrChildType(@TypeOf(s))), @TypeOf(transformFn)) {
+    return SliceIter.slice(s).map(transformFn);
 }

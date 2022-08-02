@@ -6,8 +6,8 @@ const filter = @import("filter.zig").filter;
 const slice = @import("slice.zig").slice;
 
 test "test filter with map" {
-    const ints = &[_]u32{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    var iter = slice(u32, ints);
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4, 5, 6, 7, 8 };
+    var iter = slice(ints);
 
     const S = struct {
         pub fn is_even(cur: u32) bool {
@@ -26,7 +26,7 @@ test "test filter with map" {
         }
     }.toChar;
 
-    var map_iter = filter_iter.map(bool, Fn);
+    var map_iter = filter_iter.map(Fn);
 
     while (map_iter.next()) |value| {
         debug.print("map_iter result {}\n", .{value});
@@ -34,14 +34,14 @@ test "test filter with map" {
 }
 
 test "test filter method" {
-    const ints = &[_]u32{ 1, 2, 3, 4, 5, 6, 7, 8 };
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
     const S = struct {
         pub fn is_even(cur: u32) bool {
             return cur % 2 == 0;
         }
     }.is_even;
-    var filter_iter = filter(u32, ints, S);
+    var filter_iter = filter(ints, S);
 
     const Fn = struct {
         pub fn toChar(old: u32) bool {
@@ -53,7 +53,7 @@ test "test filter method" {
         }
     }.toChar;
 
-    var map_iter = filter_iter.map(bool, Fn);
+    var map_iter = filter_iter.map(Fn);
 
     while (map_iter.next()) |value| {
         debug.print("map_iter result {}\n", .{value});

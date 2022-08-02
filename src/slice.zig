@@ -3,6 +3,9 @@ const std = @import("std");
 const mem = std.mem;
 const trait = std.meta.trait;
 
+const GetPtrChildType = @import("utils.zig").GetPtrChildType;
+const assertSlice = @import("utils.zig").assertSlice;
+
 const debug = @import("std").debug;
 
 /// A thin wrapper over a slice
@@ -16,7 +19,7 @@ pub fn SliceContext(comptime T: type) type {
         current: usize,
         len: usize,
 
-        data: []const T,
+        data: []const ItemType,
 
         /// Advances the iterator by n*step and return the item
         pub fn peekAheadFn(self: *Self, n: usize) ?ItemType {
@@ -89,8 +92,11 @@ pub fn SliceIterator(comptime T: type) type {
 }
 
 /// var iter = slice(u8,"abcd");
-pub fn slice(comptime T: type, s: anytype) SliceIterator(T) {
-    const SliceIteratorType = SliceIterator(T);
+pub fn slice(s: anytype) SliceIterator(GetPtrChildType(@TypeOf(s))) {
+    comptime {
+        assertSlice(@TypeOf(s));
+    }
+    const SliceIteratorType = SliceIterator(GetPtrChildType(@TypeOf(s)));
     var context = SliceIteratorType.IterContext.init(s);
     return SliceIteratorType.initWithContext(context);
 }

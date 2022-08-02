@@ -16,7 +16,7 @@ pub fn build(b: *std.build.Builder) void {
     test_step.dependOn(&main_tests.step);
 
     const target = b.standardTargetOptions(.{});
-    const bench_range = b.step("bench_range", "Bench range iterator");
+    const bench_range = b.step("bench-range", "Bench range iterator");
     const bench_range_exe = b.addExecutable("bench-range", "bench/range_bench.zig");
     bench_range_exe.addPackagePath("../src/range.zig", "src/range.zig");
 

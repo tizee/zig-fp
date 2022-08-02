@@ -19,11 +19,11 @@ fn transform2(value: bool) u8 {
 
 test "test MapIterator" {
     const StrIter = SliceIterator(u8);
-    const str = "0011";
+    const str: []const u8 = "0011";
     var context = StrIter.IterContext.init(str);
 
-    const Map = MapIterator(StrIter.IterContext, bool, transform);
-    var map_context = Map.IterContext.init(context);
+    const Map = MapIterator(StrIter.IterContext, @TypeOf(transform));
+    var map_context = Map.IterContext.init(context, transform);
     var map_iter = Map.initWithContext(map_context);
 
     const truth = [_]bool{ false, false, true, true };
@@ -36,12 +36,12 @@ test "test MapIterator" {
 }
 
 test "test slice map" {
-    const str = "0011";
-    var slice_iter = slice(u8, str);
+    var str: []const u8 = "0011";
+    var slice_iter = slice(str);
 
     var map_iter = slice_iter
-        .map(bool, transform)
-        .map(u8, transform2);
+        .map(transform)
+        .map(transform2);
 
     var i: usize = 0;
     while (map_iter.next()) |value| {
@@ -52,10 +52,10 @@ test "test slice map" {
 }
 
 test "test map method" {
-    const str = "0011";
+    const str: []const u8 = "0011";
 
-    var map_iter = map(u8, bool, str, transform)
-        .map(u8, transform2);
+    var map_iter = map(str, transform)
+        .map(transform2);
 
     var i: usize = 0;
     while (map_iter.next()) |value| {

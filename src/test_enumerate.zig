@@ -7,7 +7,8 @@ const enumerate = @import("enumerate.zig").enumerate;
 const slice = @import("slice.zig").slice;
 
 test "test enumerate" {
-    var iter = enumerate(u32, &[_]u32{ 1, 2, 3, 4, 5, 6 });
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4, 5, 6 };
+    var iter = enumerate(ints);
 
     var i: usize = 0;
     while (iter.next()) |value| : (i += 1) {

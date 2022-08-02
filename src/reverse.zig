@@ -1,6 +1,7 @@
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 const SliceIter = @import("slice.zig");
 
+const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 const IterAssert = @import("utils.zig");
 
 const debug = @import("std").debug;
@@ -62,6 +63,6 @@ pub fn ReverseIterator(comptime Context: type) type {
     return IDoubleEndedIterator(ReverseContextType);
 }
 
-pub fn reverse(comptime T: type, s: []const T) ReverseIterator(SliceIter.SliceContext(T)) {
-    return SliceIter.slice(T, s).reverse();
+pub fn reverse(s: anytype) ReverseIterator(SliceIter.SliceContext(GetPtrChildType(@TypeOf(s)))) {
+    return SliceIter.slice(s).reverse();
 }

@@ -1,11 +1,10 @@
 const IDoubleEndedIterator = @import("iterator/double_ended_iterator.zig").IDoubleEndedIterator;
 
+const IterAssert = @import("utils.zig");
 /// A half open Range for integer types
 pub fn RangeContext(comptime T: type) type {
     comptime {
-        if (!(T == i8 or T == u8 or T == i16 or T == u16 or T == i32 or T == u32 or T == i64 or T == u64 or T == i128 or T == u128 or T == i128 or T == isize or T == usize or T == c_short or T == c_ushort or T == c_int or T == c_uint or T == c_long or T == c_ulong or T == c_longlong or T == c_ulonglong or T == c_longdouble or T == f16 or T == f32 or T == f64 or T == f80 or T == f128)) {
-            @compileError("Range should use an integer type");
-        }
+        IterAssert.assertNum(T);
     }
 
     return struct {

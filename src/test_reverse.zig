@@ -7,9 +7,9 @@ const ReverseIterator = @import("reverse.zig").ReverseIterator;
 const debug = std.debug;
 
 test "Test Reversed for Int" {
-    const ints = &[_]u32{ 1, 2, 3, 4 };
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4 };
 
-    var iter = slice(u32, ints);
+    var iter = slice(ints);
 
     var reversed_iter = iter.reverse();
 
@@ -27,7 +27,7 @@ test "Test Reversed for string" {
         y: i32,
     };
 
-    const points = &[_]Point{
+    const points: []const Point = &[_]Point{
         .{
             .x = 1,
             .y = 1,
@@ -45,7 +45,7 @@ test "Test Reversed for string" {
             .y = 4,
         },
     };
-    var iter = slice(Point, points);
+    var iter = slice(points);
 
     var reversed_iter = iter.reverse();
 
@@ -58,9 +58,9 @@ test "Test Reversed for string" {
 }
 
 test "test reverse" {
-    const ints = &[_]u32{ 1, 2, 3, 4 };
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4 };
 
-    var reversed_iter = reverse(u32, ints);
+    var reversed_iter = reverse(ints);
 
     var i: usize = ints.len;
     while (reversed_iter.next()) |value| {
@@ -73,9 +73,9 @@ test "test reverse" {
 }
 
 test "test reverse reverse" {
-    const ints = &[_]u32{ 1, 2, 3, 4 };
+    const ints: []const u32 = &[_]u32{ 1, 2, 3, 4 };
 
-    var reversed_iter = reverse(u32, ints)
+    var reversed_iter = reverse(ints)
         .reverse()
         .reverse()
         .reverse();
