@@ -5,6 +5,8 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
+    const cwd = b.build_root;
+
     const lib = b.addStaticLibrary("zig-fp", "src/fp.zig");
     lib.setBuildMode(mode);
     lib.install();
@@ -22,7 +24,8 @@ pub fn build(b: *std.build.Builder) void {
 
     bench_range_exe.setTarget(target);
     bench_range_exe.setBuildMode(mode);
-    bench_range_exe.setOutputDir("bench");
+    const range_bench_output_dir = std.fs.path.join(b.allocator, &[_][]const u8{ cwd, "bench" }) catch unreachable;
+    bench_range_exe.setOutputDir(range_bench_output_dir);
     bench_range_exe.single_threaded = true;
     bench_range_exe.install();
     const run_cmd = bench_range_exe.run();

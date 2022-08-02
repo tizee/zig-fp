@@ -32,8 +32,12 @@ pub fn isInteger(comptime T: type) bool {
     return @typeInfo(T) == .Int;
 }
 
+pub fn isNumber(comptime T: type) bool {
+    return isFloat(T) or isInteger(T);
+}
+
 pub fn assertNum(comptime T: type) void {
-    if (!isInteger(T) and !isFloat(T)) {
+    if (!isNumber(T)) {
         @compileError("require a Number type");
     }
 }

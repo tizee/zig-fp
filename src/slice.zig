@@ -6,8 +6,6 @@ const SizeHint = @import("core/size-hint.zig").SizeHint;
 const GetPtrChildType = @import("utils.zig").GetPtrChildType;
 const assertSlice = @import("utils.zig").assertSlice;
 
-const debug = std.debug;
-
 /// A thin wrapper over a slice
 /// It's actually a double-ended iterator context
 pub fn SliceContext(comptime T: type) type {
@@ -114,4 +112,62 @@ pub fn slice(s: anytype) SliceIterator(GetPtrChildType(@TypeOf(s))) {
     const SliceIteratorType = SliceIterator(GetPtrChildType(@TypeOf(s)));
     var context = SliceIteratorType.IterContext.init(s);
     return SliceIteratorType.initWithContext(context);
+}
+
+const testing = std.testing;
+const testIterator = @import("utils.zig").testIterator;
+const debug = std.debug;
+
+test "test SliceIterator" {
+    const StrIter = SliceIterator(u8);
+    const str = "abcd";
+    var context = StrIter.IterContext.init(str);
+    var iter = StrIter.initWithContext(context);
+
+    var i: usize = 0;
+    while (iter.next()) |value| {
+        try testing.expectEqual(str[i], value);
+        i += 1;
+        debug.print("{}\n", .{value});
+    }
+    context = StrIter.IterContext.init(str);
+    iter = StrIter.initWithContext(context);
+
+    try testing.expectEqual(@as(?u8, str[0]), iter.peek());
+    _ = iter.next();
+    _ = iter.next();
+    try testing.expectEqual(@as(?u8, str[2]), iter.peek());
+}
+
+test "test slice" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    var i: usize = 0;
+    while (iter.next()) |value| {
+        try testing.expectEqual(str[i], value);
+        i += 1;
+        debug.print("{}\n", .{value});
+    }
+}
+
+test "test slice size_hint" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+    try testIterator(iter, str, 4, SizeHint{
+        .low = 4,
+        .high = 4,
+    });
+}
+
+test "test slice ducking types" {
+    const StrIter = SliceIterator(u8);
+    const str: []const u8 = "abcd";
+
+    var context = StrIter.IterContext.init(str);
+    var iter = StrIter.initWithContext(context);
+
+    var iter2 = slice(str);
+
+    try testing.expect(@TypeOf(iter2) == @TypeOf(iter));
 }

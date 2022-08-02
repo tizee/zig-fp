@@ -1,10 +1,15 @@
+const std = @import("std");
+const testing = std.testing;
+
 test "test all" {
-    _ = @import("test_range.zig");
-    _ = @import("test_reverse.zig");
-    _ = @import("test_slice.zig");
-    _ = @import("test_map.zig");
-    _ = @import("test_filter.zig");
-    _ = @import("test_filter_map.zig");
-    _ = @import("test_enumerate.zig");
+    testing.refAllDecls(@import("fp.zig"));
+    _ = @import("chain.zig");
     _ = @import("core/iterator.zig");
+    _ = @import("enumerate.zig");
+    _ = @import("filter.zig");
+    _ = @import("filter-map.zig");
+    _ = @import("map.zig");
+    _ = @import("range.zig");
+    _ = @import("reverse.zig");
+    _ = @import("slice.zig");
 }

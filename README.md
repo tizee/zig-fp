@@ -38,38 +38,8 @@ it.range(u32,0,100,1)
   .for_each(print);
 ```
 
-## TODO
+## Performance
 
-- [x] Iterator type
-  - [x] General iterator
-    - [x] filter_map
-    - [x] find
-    - [x] fold
-    - [x] for_each
-    - [x] map
-    - [x] next
-    - [x] peek
-    - [x] peekAhead
-    - [x] reduce
-    - [x] size_hint
-    - [x] skip
-  - [x] Double-ended iterator
-    - [x] filter_map
-    - [x] find
-    - [x] fold
-    - [x] for_each
-    - [x] map
-    - [x] next
-    - [x] peek
-    - [x] peekAhead
-    - [x] reduce
-    - [x] reverse
-    - [x] size_hint
-    - [x] skip
-  - [x] EnumerateIterator (Wrapper)
-  - [x] FilterIterator (Wrapper)
-  - [x] FilterMapIterator (Wrapper)
-  - [x] MapIterator (Wrapper)
-  - [x] RangeIterator (Double-ended iterator)
-  - [x] ReverseIterator (Wrapper)
-  - [x] SliceIterator (Double-ended iterator)
+```
+
+```

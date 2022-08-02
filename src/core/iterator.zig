@@ -1,15 +1,18 @@
+const EnumerateIterator = @import("../enumerate.zig").EnumerateIterator;
+const FilterIterator = @import("../filter.zig").FilterIterator;
+const FilterMapIterator = @import("../filter-map.zig").FilterMapIterator;
+const IterAssert = @import("../utils.zig");
 const MapIterator = @import("../map.zig").MapIterator;
 const RangeIterator = @import("../range.zig").RangeIterator;
 const ReverseIterator = @import("../reverse.zig").ReverseIterator;
-const slice = @import("../slice.zig").slice;
-const FilterIterator = @import("../filter.zig").FilterIterator;
-const FilterMapIterator = @import("../filter-map.zig").FilterMapIterator;
-const EnumerateIterator = @import("../enumerate.zig").EnumerateIterator;
-const IterAssert = @import("../utils.zig");
-const SizeHint = @import("size-hint.zig").SizeHint;
+const ChainIterator = @import("../chain.zig").ChainIterator;
 
-const debug = @import("std").debug;
-const testing = @import("std").testing;
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+const ArrayList = std.ArrayList;
+
+const slice = @import("../slice.zig").slice;
+const SizeHint = @import("size-hint.zig").SizeHint;
 
 /// Create a double-ended iterator if its context support
 /// related methods like nextBackFn etc. Otherwise, it will
@@ -81,7 +84,19 @@ pub fn IIterator(
             pub const IterContext = Context;
             pub const ItemType = Context.ItemType;
 
+            // A flag marks whether the context has been moved out
+            // This is ugly but it can be used to check whether the context has been moved out
+            // in the runtime.
+            moved: bool = false,
             context: Context,
+
+            fn set_moved(self: *Self) void {
+                if (self.moved) {
+                    @panic("use moved context");
+                } else {
+                    self.moved = true;
+                }
+            }
 
             /// return 0 if the context does not support
             /// size_hint
@@ -105,6 +120,11 @@ pub fn IIterator(
             // for wrappers with Fn like Map,Filter,FilterMap
             pub fn initWithFunc(context: anytype, f: anytype) Self {
                 return Self{ .context = Context{ .context = context, .func = f } };
+            }
+
+            // for wrappers with Fn like Chain,
+            pub fn initWithTwoContext(a: anytype, b: anytype) Self {
+                return Self{ .context = Context{ .contextA = a, .contextB = b } };
             }
 
             /// Look at the next item without advancing
@@ -153,24 +173,51 @@ pub fn IIterator(
 
             /// transform ItemType to NewType and return a new Iterator
             pub fn map(self: *Self, f: anytype) MapIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
                 // this iterator should be exhausted after reverse()
                 return MapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
             // this iterator should be exhausted after filter()
             pub fn filter(self: *Self, f: anytype) FilterIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
                 return FilterIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
             // this iterator should be exhausted after reverse()
             pub fn reverse(self: *Self) ReverseIterator(Self.IterContext) {
+                self.set_moved();
                 self.context.reverseFn();
                 return ReverseIterator(Self.IterContext).initWithInnerContext(self.context);
             }
 
             // this iterator should be exhausted after filter_map()
             pub fn filter_map(self: *Self, f: anytype) FilterMapIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
                 return FilterMapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
+            }
+
+            // chain two iterators together by move out the ownership of their IterContext
+            pub fn chain(self: *Self, iter: anytype) ChainIterator(Self.IterContext, @TypeOf(iter).IterContext) {
+                self.set_moved();
+                comptime {
+                    if (@hasDecl(@TypeOf(iter), "IterContext")) {
+                        IterAssert.assertIteratorContext(@TypeOf(iter).IterContext);
+                    } else {
+                        @compileError("Iterator must define its IterContext type");
+                    }
+                }
+                return ChainIterator(Self.IterContext, @TypeOf(iter).IterContext).initWithTwoContext(self.context, iter.context);
+            }
+
+            // Consumes the iterator
+            pub fn step(self: *Self, f: fn (ItemType) bool) bool {
+                while (self.next()) |value| {
+                    if (f(value)) {
+                        return value;
+                    }
+                }
+                return null;
             }
 
             /// Consumes the iterator and apply the f for each item
@@ -207,6 +254,54 @@ pub fn IIterator(
                 }
                 return null;
             }
+
+            // Consumes the iterator
+            pub fn all(self: *Self, f: fn (ItemType) bool) bool {
+                while (self.next()) |value| {
+                    if (!f(value)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Consumes the iterator
+            pub fn any(self: *Self, f: fn (ItemType) bool) bool {
+                while (self.next()) |value| {
+                    if (f(value)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Consumes the iterator
+            pub fn sum(self: *Self) ?ItemType {
+                if (IterAssert.isNumber(Self.ItemType)) {
+                    var val: ItemType = 0;
+                    while (self.context.nextFn()) |value| {
+                        val += value;
+                    }
+                    return val;
+                } else {
+                    return null;
+                }
+            }
+
+            // Consumes the iterator
+            pub fn last(self: *Self) ?ItemType {
+                while (self.context.peekAheadFn(1)) |_| {
+                    _ = self.context.skipFn();
+                }
+                return self.context.nextFn();
+            }
+
+            pub fn into_array(self: *Self, list: *ArrayList(Self.ItemType)) !*ArrayList(Self.ItemType) {
+                while (self.context.nextFn()) |value| {
+                    try list.*.append(value);
+                }
+                return list;
+            }
         };
     } else {
         return struct {
@@ -214,7 +309,19 @@ pub fn IIterator(
             pub const IterContext = Context;
             pub const ItemType = Context.ItemType;
 
+            // A flag marks whether the context has been moved out
+            // This is ugly but it can be used to check whether the context has been moved out
+            // in the runtime.
+            moved: bool = false,
             context: Context,
+
+            fn set_moved(self: *Self) void {
+                if (self.moved) {
+                    @panic("use moved context");
+                } else {
+                    self.moved = true;
+                }
+            }
 
             /// return 0 if the context does not support
             /// size_hint
@@ -240,13 +347,18 @@ pub fn IIterator(
                 return Self{ .context = Context{ .context = context, .func = f } };
             }
 
+            // for wrappers with Fn like Chain,
+            pub fn initWithTwoContext(a: anytype, b: anytype) Self {
+                return Self{ .context = Context{ .contextA = a, .contextB = b } };
+            }
+
             /// Look at the next item without advancing
             pub fn peek(self: *Self) ?ItemType {
                 return self.context.peekAheadFn(0);
             }
 
             /// Look at the nth item without advancing
-            pub fn peekAhead(self: *Self, comptime n: usize) ?ItemType {
+            pub fn peekAhead(self: *Self, n: usize) ?ItemType {
                 return self.context.peekAheadFn(n);
             }
 
@@ -272,18 +384,44 @@ pub fn IIterator(
 
             /// transform ItemType to NewType and return a new Iterator
             pub fn map(self: *Self, f: anytype) MapIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
                 // this iterator should be exhausted after reverse()
                 return MapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
             // this iterator should be exhausted after filter()
             pub fn filter(self: *Self, f: anytype) FilterIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
                 return FilterIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
             // this iterator should be exhausted after filter_map()
             pub fn filter_map(self: *Self, f: anytype) FilterMapIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
                 return FilterMapIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
+            }
+
+            // chain two iterators together by move out the ownership of their IterContext
+            pub fn chain(self: *Self, iter: anytype) ChainIterator(Self.IterContext, @TypeOf(iter).IterContext) {
+                self.set_moved();
+                comptime {
+                    if (@hasDecl(@TypeOf(iter), "IterContext")) {
+                        IterAssert.assertIteratorContext(@TypeOf(iter).IterContext);
+                    } else {
+                        @compileError("Iterator must define its IterContext type");
+                    }
+                }
+                return ChainIterator(Self.IterContext, @TypeOf(iter).IterContext).initWithTwoContext(self.context, iter.context);
+            }
+
+            // Consumes the iterator
+            pub fn step(self: *Self, f: fn (ItemType) bool) bool {
+                while (self.next()) |value| {
+                    if (f(value)) {
+                        return value;
+                    }
+                }
+                return null;
             }
 
             /// Consumes the iterator and apply the f for each item
@@ -312,17 +450,68 @@ pub fn IIterator(
             }
 
             // Consumes the iterator
-            pub fn find(self: *Self, f: fn (*ItemType) bool) ?ItemType {
+            pub fn find(self: *Self, f: fn (ItemType) bool) ?ItemType {
                 while (self.next()) |value| {
-                    if (f(&value)) {
+                    if (f(value)) {
                         return value;
                     }
                 }
                 return null;
             }
+
+            // Consumes the iterator
+            pub fn all(self: *Self, f: fn (ItemType) bool) bool {
+                while (self.next()) |value| {
+                    if (!f(value)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Consumes the iterator
+            pub fn any(self: *Self, f: fn (ItemType) bool) bool {
+                while (self.next()) |value| {
+                    if (f(value)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Consumes the iterator
+            pub fn sum(self: *Self) ?ItemType {
+                if (IterAssert.isNumber(Self.ItemType)) {
+                    var val: ItemType = 0;
+                    while (self.context.nextFn()) |value| {
+                        val += value;
+                    }
+                    return val;
+                } else {
+                    return null;
+                }
+            }
+
+            // Consumes the iterator
+            pub fn last(self: *Self) ?ItemType {
+                while (self.context.peekAheadFn(1)) |_| {
+                    _ = self.context.skipFn();
+                }
+                return self.context.nextFn();
+            }
+
+            pub fn into_array(self: *Self, list: *ArrayList(Self.ItemType)) !*ArrayList(Self.ItemType) {
+                while (self.context.nextFn()) |value| {
+                    try list.*.append(value);
+                }
+                return list;
+            }
         };
     }
 }
+
+const debug = std.debug;
+const testing = std.testing;
 
 test "test filter" {
     const ints: []const u32 = &[_]u32{ 1, 2, 3, 4 };
@@ -481,3 +670,59 @@ test "test count" {
 
     try testing.expect(iter.next() == null);
 }
+
+test "test all" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    var len: usize = str.len;
+
+    while (iter.next()) |_| : (len -= 1) {
+        try testing.expectEqual(@as(?usize, len - 1), iter.count());
+    }
+
+    try testing.expect(iter.next() == null);
+}
+
+test "test any" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    var len: usize = str.len;
+
+    while (iter.next()) |_| : (len -= 1) {
+        try testing.expectEqual(@as(?usize, len - 1), iter.count());
+    }
+
+    try testing.expect(iter.next() == null);
+}
+
+test "test last" {
+    const str: []const u8 = "abcd";
+    var iter = slice(str);
+
+    try testing.expectEqual(@as(?u8, 'd'), iter.last());
+}
+
+test "test sum" {
+    const str: []const u32 = &[_]u32{ 1, 2, 3 };
+    var iter = slice(str);
+    try testing.expectEqual(@as(u32, 6), iter.sum().?);
+}
+
+test "test into_array" {
+    const str: []const u8 = "abcd";
+    const allocator = testing.allocator;
+    var iter = slice(str);
+    var list = &ArrayList(u8).init(allocator);
+    defer list.*.deinit();
+
+    var values = try iter.into_array(list);
+    var i: usize = 0;
+    for (values.*.items) |value| {
+        try testing.expectEqual(@as(u8, str[i]), value);
+        i += 1;
+    }
+}
+
+test "moved context" {}

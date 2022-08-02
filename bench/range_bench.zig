@@ -1,33 +1,59 @@
 const std = @import("std");
+const debug = std.debug;
+const RangeContext = @import("../src/range.zig").RangeContext;
 const range = @import("../src/range.zig").range;
+const Range64 = RangeContext(u64);
 
-const TIMES: i64 = 500_000;
+const TIMES: u64 = 1_000_000;
 
 fn whileLoop() void {
-    var i: i64 = TIMES;
-    while (i > 0) : (i -= 1) {
+    var i: u64 = 0;
+    while (i < TIMES) : (i += 1) {
         asm volatile ("" ::: "memory");
     }
 }
 
 fn rangeLoop() void {
-    var iter = range(i64, TIMES, 0, -1);
+    var iter = range(u64, 0, TIMES, 1);
 
     while (iter.next()) |_| {
         asm volatile ("" ::: "memory");
     }
 }
 
+fn rangeContextLoop() void {
+    var iter = Range64.init(0, TIMES, 1);
+
+    while (iter.nextFn()) |_| {
+        asm volatile ("" ::: "memory");
+    }
+}
+
 pub fn main() anyerror!void {
-    const stdout = std.io.getStdOut().writer();
-
-    const start = std.time.nanoTimestamp();
+    var start = std.time.nanoTimestamp();
     whileLoop();
-    const end = std.time.nanoTimestamp();
-    try stdout.print("while-loop: {}ns\n", .{(end - start)});
+    var end = std.time.nanoTimestamp();
+    const whileTime = end - start;
 
-    const iter_start = std.time.nanoTimestamp();
+    start = std.time.nanoTimestamp();
     rangeLoop();
-    const iter_end = std.time.nanoTimestamp();
-    try stdout.print("range-loop: {}ns\n", .{(iter_end - iter_start)});
+    end = std.time.nanoTimestamp();
+    const contextTime = end - start;
+
+    start = std.time.nanoTimestamp();
+    rangeLoop();
+    end = std.time.nanoTimestamp();
+    const rangeTime = end - start;
+
+    debug.print(
+        \\  while  :       {}ns  base
+        \\  context:       {}ns {} times
+        \\  range  :       {}ns {} times
+    , .{
+        whileTime,
+        contextTime,
+        @divFloor(contextTime, whileTime),
+        rangeTime,
+        @divFloor(rangeTime, whileTime),
+    });
 }

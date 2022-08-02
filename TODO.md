@@ -1,0 +1,79 @@
+## TODO
+
+- [x] Iterator type
+  - [x] General iterator
+    - [x] all
+    - [x] any
+    - [x] chain
+    - [ ] fuse
+    - [x] into_array
+    - [x] last
+    - [ ] map_while
+    - [ ] nextN
+    - [ ] skipN
+    - [ ] skip_while
+    - [ ] step
+    - [x] sum
+    - [ ] take
+    - [ ] take_while
+    - [ ] unzip
+    - [ ] zip
+    - [x] count
+    - [x] filter_map
+    - [x] find
+    - [x] fold
+    - [x] for_each
+    - [x] map
+    - [x] next
+    - [x] peek
+    - [x] peekAhead
+    - [x] reduce
+    - [x] size_hint
+    - [x] skip
+  - [x] Double-ended iterator
+    - [x] all
+    - [x] any
+    - [x] chain
+    - [ ] fuse
+    - [x] into_array
+    - [x] last
+    - [ ] map_while
+    - [ ] nextBackN
+    - [ ] nextN
+    - [ ] skipBackN
+    - [ ] skipN
+    - [ ] skip_while
+    - [ ] step
+    - [x] sum
+    - [ ] take
+    - [ ] take_while
+    - [ ] unzip
+    - [ ] zip
+    - [x] count
+    - [x] filter_map
+    - [x] find
+    - [x] fold
+    - [x] for_each
+    - [x] map
+    - [x] next
+    - [x] nextBack
+    - [x] peek
+    - [x] peekAhead
+    - [x] peekBackward
+    - [x] reduce
+    - [x] reverse
+    - [x] size_hint
+    - [x] skip
+  - [x] ChainIterator (Wrapper)
+  - [ ] FuseIterator (Wrapper)
+  - [ ] MapWhileIterator (Wrapper)
+  - [ ] SkipWhileIterator (Wrapper)
+  - [ ] StepIterator (Wrapper)
+  - [ ] TakeWhileIterator (Wrapper)
+  - [x] EnumerateIterator (Wrapper)
+  - [x] FilterIterator (Wrapper)
+  - [x] FilterMapIterator (Wrapper)
+  - [x] MapIterator (Wrapper)
+  - [x] RangeIterator (Double-ended iterator)
+  - [x] ReverseIterator (Wrapper)
+  - [x] SliceIterator (Double-ended iterator)
