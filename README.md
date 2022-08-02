@@ -1,13 +1,16 @@
 # zig-fp
 
-Functional programmimng style iterator patterns in Zig lang.
+Functional programmimng style patterns in Zig lang.
 
 ```
 zig version
 0.10.0-dev.3340+c6f5832bb
 ```
 
-Currently Zig does not support closure but we can achieve similar functionality with `comptime` and `type` to build the context for reusing the same iterator interface.
+## Features
+
+- Iterators
+- Monad
 
 ## Usage
 
@@ -37,3 +40,5 @@ it.range(u32,0,100,1)
   .map(toChar)
   .for_each(print);
 ```
+
+> Currently Zig does not support closure but we can achieve similar functionality with `comptime` and `type` to build the context for reusing the same iterator interface.

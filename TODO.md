@@ -9,10 +9,10 @@
     - [x] into_array
     - [x] last
     - [ ] map_while
-    - [ ] nextN
-    - [ ] skipN
+    - [x] nextN
+    - [x] skipN
     - [ ] skip_while
-    - [ ] step
+    - [x] step
     - [x] sum
     - [ ] take
     - [ ] take_while
@@ -38,12 +38,12 @@
     - [x] into_array
     - [x] last
     - [ ] map_while
-    - [ ] nextBackN
-    - [ ] nextN
-    - [ ] skipBackN
-    - [ ] skipN
+    - [x] nextBackN
+    - [x] nextN
+    - [x] skipBackN
+    - [x] skipN
     - [ ] skip_while
-    - [ ] step
+    - [x] step
     - [x] sum
     - [ ] take
     - [ ] take_while
@@ -68,7 +68,7 @@
   - [ ] FuseIterator (Wrapper)
   - [ ] MapWhileIterator (Wrapper)
   - [ ] SkipWhileIterator (Wrapper)
-  - [ ] StepIterator (Wrapper)
+  - [x] StepIterator (Wrapper)
   - [ ] TakeWhileIterator (Wrapper)
   - [x] EnumerateIterator (Wrapper)
   - [x] FilterIterator (Wrapper)
@@ -77,3 +77,5 @@
   - [x] RangeIterator (Double-ended iterator)
   - [x] ReverseIterator (Wrapper)
   - [x] SliceIterator (Double-ended iterator)
+- [ ] Monad
+- [ ] Closure
