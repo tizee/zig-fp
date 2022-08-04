@@ -9,6 +9,7 @@ pub const RangeIterator = @import("range.zig").RangeIterator;
 pub const ReverseIterator = @import("reverse.zig").ReverseIterator;
 pub const SliceIterator = @import("slice.zig").SliceIterator;
 pub const StepIterator = @import("step.zig").StepIterator;
+pub const TakeIterator = @import("take.zig").TakeIterator;
 
 pub const chain = @import("chain.zig").chain;
 pub const enumerate = @import("enumerate.zig").enumerate;
@@ -19,6 +20,7 @@ pub const range = @import("range.zig").range;
 pub const reverse = @import("reverse.zig").reverse;
 pub const slice = @import("slice.zig").slice;
 pub const step = @import("step.zig").step;
+pub const take = @import("take.zig").take;
 
 /// Monad
 pub const Monad = @import("core/monad.zig").Monad;

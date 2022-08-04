@@ -14,7 +14,7 @@
     - [ ] skip_while
     - [x] step
     - [x] sum
-    - [ ] take
+    - [x] take
     - [ ] take_while
     - [ ] unzip
     - [ ] zip
@@ -45,7 +45,7 @@
     - [ ] skip_while
     - [x] step
     - [x] sum
-    - [ ] take
+    - [x] take
     - [ ] take_while
     - [ ] unzip
     - [ ] zip
@@ -69,6 +69,7 @@
   - [ ] MapWhileIterator (Wrapper)
   - [ ] SkipWhileIterator (Wrapper)
   - [x] StepIterator (Wrapper)
+  - [x] TakeIterator (Wrapper)
   - [ ] TakeWhileIterator (Wrapper)
   - [x] EnumerateIterator (Wrapper)
   - [x] FilterIterator (Wrapper)

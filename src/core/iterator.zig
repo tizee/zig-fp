@@ -7,6 +7,7 @@ const RangeIterator = @import("../range.zig").RangeIterator;
 const ReverseIterator = @import("../reverse.zig").ReverseIterator;
 const ChainIterator = @import("../chain.zig").ChainIterator;
 const StepIterator = @import("../step.zig").StepIterator;
+const TakeIterator = @import("../take.zig").TakeIterator;
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -262,7 +263,14 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn step(self: *Self, init_state: usize) StepIterator(Self.IterContext) {
+                self.set_moved();
                 return StepIterator(Self.IterContext).initWithAState(self.context, init_state);
+            }
+
+            // Consumes the iterator
+            pub fn take(self: *Self, init_state: usize) TakeIterator(Self.IterContext) {
+                self.set_moved();
+                return TakeIterator(Self.IterContext).initWithAState(self.context, init_state);
             }
 
             /// Consumes the iterator and apply the f for each item
@@ -488,7 +496,14 @@ pub fn IIterator(
 
             // Consumes the iterator
             pub fn step(self: *Self, init_state: usize) StepIterator(Self.IterContext) {
+                self.set_moved();
                 return StepIterator(Self.IterContext).initWithAState(self.context, init_state);
+            }
+
+            // Consumes the iterator
+            pub fn take(self: *Self, init_state: usize) TakeIterator(Self.IterContext) {
+                self.set_moved();
+                return TakeIterator(Self.IterContext).initWithAState(self.context, init_state);
             }
 
             /// Consumes the iterator and apply the f for each item
