@@ -70,14 +70,14 @@ pub fn assertDoubleEndedIteratorContext(comptime Context: type) void {
 }
 
 pub fn testIterator(it: anytype, expected: anytype, len: usize, hint: SizeHint) !void {
-    var iter_ = it;
-    try testing.expectEqual(hint, iter_.size_hint());
+    var iter = it;
+    try testing.expectEqual(hint, iter.size_hint());
 
     var i: usize = 0;
     for (expected) |item| {
-        try testing.expectEqual(item, iter_.next().?);
+        try testing.expectEqual(item, iter.next().?);
         i += 1;
     }
-    try testing.expect(iter_.next() == null);
+    try testing.expect(iter.next() == null);
     try testing.expectEqual(len, i);
 }

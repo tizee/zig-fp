@@ -13,4 +13,6 @@ test "test all" {
     _ = @import("reverse.zig");
     _ = @import("slice.zig");
     _ = @import("step.zig");
+    _ = @import("take.zig");
+    _ = @import("take-while.zig");
 }

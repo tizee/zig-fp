@@ -8,6 +8,7 @@ const ReverseIterator = @import("../reverse.zig").ReverseIterator;
 const ChainIterator = @import("../chain.zig").ChainIterator;
 const StepIterator = @import("../step.zig").StepIterator;
 const TakeIterator = @import("../take.zig").TakeIterator;
+const TakeWhileIterator = @import("../take-while.zig").TakeWhileIterator;
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -271,6 +272,12 @@ pub fn IIterator(
             pub fn take(self: *Self, init_state: usize) TakeIterator(Self.IterContext) {
                 self.set_moved();
                 return TakeIterator(Self.IterContext).initWithAState(self.context, init_state);
+            }
+
+            // Consumes the iterator
+            pub fn take_while(self: *Self, f: anytype) TakeWhileIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
+                return TakeWhileIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
             /// Consumes the iterator and apply the f for each item
