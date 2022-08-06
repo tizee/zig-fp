@@ -9,6 +9,7 @@ const ChainIterator = @import("../chain.zig").ChainIterator;
 const StepIterator = @import("../step.zig").StepIterator;
 const TakeIterator = @import("../take.zig").TakeIterator;
 const TakeWhileIterator = @import("../take-while.zig").TakeWhileIterator;
+const SkipWhileIterator = @import("../skip-while.zig").SkipWhileIterator;
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -280,6 +281,12 @@ pub fn IIterator(
                 return TakeWhileIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
+            // Consumes the iterator
+            pub fn skip_while(self: *Self, f: anytype) SkipWhileIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
+                return SkipWhileIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
+            }
+
             /// Consumes the iterator and apply the f for each item
             pub fn for_each(self: *Self, f: fn (item: ItemType) void) void {
                 while (self.context.nextFn()) |value| {
@@ -511,6 +518,18 @@ pub fn IIterator(
             pub fn take(self: *Self, init_state: usize) TakeIterator(Self.IterContext) {
                 self.set_moved();
                 return TakeIterator(Self.IterContext).initWithAState(self.context, init_state);
+            }
+
+            // Consumes the iterator
+            pub fn take_while(self: *Self, f: anytype) TakeWhileIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
+                return TakeWhileIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
+            }
+
+            // Consumes the iterator
+            pub fn skip_while(self: *Self, f: anytype) SkipWhileIterator(Self.IterContext, @TypeOf(f)) {
+                self.set_moved();
+                return SkipWhileIterator(Self.IterContext, @TypeOf(f)).initWithFunc(self.context, f);
             }
 
             /// Consumes the iterator and apply the f for each item

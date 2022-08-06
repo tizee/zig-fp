@@ -11,11 +11,11 @@
     - [ ] map_while
     - [x] nextN
     - [x] skipN
-    - [ ] skip_while
+    - [x] skip_while
     - [x] step
     - [x] sum
     - [x] take
-    - [ ] take_while
+    - [x] take_while
     - [ ] unzip
     - [ ] zip
     - [x] count
@@ -42,11 +42,11 @@
     - [x] nextN
     - [x] skipBackN
     - [x] skipN
-    - [ ] skip_while
+    - [x] skip_while
     - [x] step
     - [x] sum
     - [x] take
-    - [ ] take_while
+    - [x] take_while
     - [ ] unzip
     - [ ] zip
     - [x] count
@@ -67,10 +67,10 @@
   - [x] ChainIterator (Wrapper)
   - [ ] FuseIterator (Wrapper)
   - [ ] MapWhileIterator (Wrapper)
-  - [ ] SkipWhileIterator (Wrapper)
+  - [x] SkipWhileIterator (Wrapper)
   - [x] StepIterator (Wrapper)
   - [x] TakeIterator (Wrapper)
-  - [ ] TakeWhileIterator (Wrapper)
+  - [x] TakeWhileIterator (Wrapper)
   - [x] EnumerateIterator (Wrapper)
   - [x] FilterIterator (Wrapper)
   - [x] FilterMapIterator (Wrapper)
