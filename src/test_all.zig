@@ -15,4 +15,5 @@ test "test all" {
     _ = @import("step.zig");
     _ = @import("take.zig");
     _ = @import("take-while.zig");
+    _ = @import("fuse.zig");
 }

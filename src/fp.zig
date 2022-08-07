@@ -12,6 +12,7 @@ pub const StepIterator = @import("step.zig").StepIterator;
 pub const TakeIterator = @import("take.zig").TakeIterator;
 pub const TakeWhileIterator = @import("take-while.zig").TakeWhileIterator;
 pub const SkipWhileIterator = @import("skip-while.zig").SkipWhileIterator;
+pub const FuseIterator = @import("fuse.zig").FuseIterator;
 
 pub const chain = @import("chain.zig").chain;
 pub const enumerate = @import("enumerate.zig").enumerate;

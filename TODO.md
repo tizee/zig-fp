@@ -5,7 +5,7 @@
     - [x] all
     - [x] any
     - [x] chain
-    - [ ] fuse
+    - [x] fuse
     - [x] into_array
     - [x] last
     - [ ] map_while
@@ -34,7 +34,7 @@
     - [x] all
     - [x] any
     - [x] chain
-    - [ ] fuse
+    - [x] fuse
     - [x] into_array
     - [x] last
     - [ ] map_while
@@ -65,7 +65,7 @@
     - [x] size_hint
     - [x] skip
   - [x] ChainIterator (Wrapper)
-  - [ ] FuseIterator (Wrapper)
+  - [x] FuseIterator (Wrapper)
   - [ ] MapWhileIterator (Wrapper)
   - [x] SkipWhileIterator (Wrapper)
   - [x] StepIterator (Wrapper)
